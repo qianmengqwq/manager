@@ -89,3 +89,6 @@ table只使用 shadcn data-table，用了 tanstack-table，代码在component文
 
 展示信息的 toast 使用的是 react-hot-toast，文档在这里：https://react-hot-toast.com/
 
+状态永远优先使用 zustand 做管理，文档在这里：https://zustand.docs.pmnd.rs/
+
+缺少组件请运行相关 shadcn 指令，而不是自己直接编写代码

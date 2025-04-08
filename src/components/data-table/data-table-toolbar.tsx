@@ -1,11 +1,11 @@
 'use client'
 
 import type { Column, Table } from '@tanstack/react-table'
-import { DataTableDateFilter } from '@/components/data-table-date-filter'
-import { DataTableFacetedFilter } from '@/components/data-table-faceted-filter'
+import { DataTableDateFilter } from '@/components/data-table/data-table-date-filter'
+import { DataTableFacetedFilter } from '@/components/data-table/data-table-faceted-filter'
 
-import { DataTableSliderFilter } from '@/components/data-table-slider-filter'
-import { DataTableViewOptions } from '@/components/data-table-view-options'
+import { DataTableSliderFilter } from '@/components/data-table/data-table-slider-filter'
+import { DataTableViewOptions } from '@/components/data-table/data-table-view-options'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'

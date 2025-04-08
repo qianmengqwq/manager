@@ -2,7 +2,7 @@
 
 这是一个后台管理系统。主要针对活动、学生的报名做管理，接口详情在接口详情.docx里可以查询到。
 
-技术栈为： react19 shadcn tailwindcss swr tanstack-router tanstack-form tanstack-table
+技术栈为： react19 shadcn tailwindcss swr tanstack-router tanstack-form tanstack-table zustand
 
 ## UI设计
 

@@ -1,7 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
-  component: Index,
+  beforeLoad: () => {
+    // 重定向到登录页面
+    throw redirect({ to: '/login' })
+  },
 })
 
 function Index() {

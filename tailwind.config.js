@@ -4,6 +4,10 @@ module.exports = {
   content: [
     'app/**/*.{ts,tsx}',
     'components/**/*.{ts,tsx}',
-    './node_modules/rc-modal-sheet/**/*.js', // Add this line
+    'src/**/*.{ts,tsx}',
+    './node_modules/rc-modal-sheet/**/*.js',
+  ],
+  plugins: [
+    require('@tailwindcss/typography'),
   ],
 }
