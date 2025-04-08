@@ -1,0 +1,91 @@
+# Expert Guidelines
+
+You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+
+Code Style and Structure
+
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, subcomponents, helpers, static content, types.
+- Use console.log({value}) instead of console.log(value)
+- Use onCallback instead of handleCallback
+
+Naming Conventions
+
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Favor named exports for components.
+
+TypeScript Usage
+
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
+
+Syntax and Formatting
+
+- Use the "function" keyword for pure functions.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use declarative JSX.
+
+UI and Styling
+
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+优先使用我的项目中为你提供的技术栈：
+
+编写 react 组件要使用 react19 新特性
+
+可以使用 shadcn 组件的地方要使用 shadcn 去做
+
+弹窗只使用命令式modal
+
+文档在这里：https://rc-modal.pages.dev/quick-start
+
+下方是使用示例
+
+``` tsx
+function useMyModal() {
+  const { present } = useModalStack()
+  return useCallback(() => {
+    present({
+      title: 'My Modal',
+      content: () => (
+        <p>
+          This is a modal. You can put anything you want in here. And It can be
+          nested.
+        </p>
+      ),
+    })
+  }, [present])
+}
+
+function Component1() {
+  const showModal = useMyModal()
+  return (
+    <>
+      <Button onClick={showModal}>Open Modal</Button>
+    </>
+  )
+}
+
+function Component2() {
+  const showModal = useMyModal()
+  return (
+    <>
+      <Button onClick={showModal}>Other biz button also use modal</Button>
+    </>
+  )
+}
+```
+
+表单只使用 shadcn Form，用了tanstack-form
+
+table只使用 shadcn data-table，用了 tanstack-table，代码在component文件夹下，集成了很多功能，文档在这里：https://www.diceui.com/docs/components/data-table
+
+数据获取只使用 swr，文档在这里：https://swr.vercel.app/zh-CN
+
+展示信息的 toast 使用的是 react-hot-toast，文档在这里：https://react-hot-toast.com/
+
