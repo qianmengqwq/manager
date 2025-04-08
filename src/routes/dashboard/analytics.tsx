@@ -3,4 +3,4 @@ import { AnalyticsPage } from '../../pages/dashboard/analytics/AnalyticsPage'
 
 export const Route = createFileRoute('/dashboard/analytics')({
   component: AnalyticsPage,
-}) 
+})

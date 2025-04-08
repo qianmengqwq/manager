@@ -1,32 +1,32 @@
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/data-table/data-table"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Calendar, Download, Edit, FileDown, Users } from "lucide-react"
+import { DataTable } from '@/components/data-table/data-table'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { cn } from "@/lib/utils"
+import { ArrowLeft, Calendar, Download, Edit, FileDown, Users } from 'lucide-react'
+import { useState } from 'react'
 
 // 活动状态映射
 const activityStatusMap = {
-  draft: { label: "草稿", color: "secondary" },
-  published: { label: "已发布", color: "success" },
-  ended: { label: "已结束", color: "warning" },
-  archived: { label: "已归档", color: "destructive" }
+  draft: { label: '草稿', color: 'secondary' },
+  published: { label: '已发布', color: 'success' },
+  ended: { label: '已结束', color: 'warning' },
+  archived: { label: '已归档', color: 'destructive' },
 } as const
 
 // 模拟活动详情数据
 const mockActivityDetail = {
-  id: "1",
-  title: "迎新晚会",
-  status: "published" as const,
-  startTime: "2023-09-01 19:00",
-  endTime: "2023-09-01 22:00",
-  location: "大学礼堂",
-  organizer: "学生会",
-  createdBy: "管理员",
-  createdAt: "2023-08-15",
-  updatedAt: "2023-08-20",
+  id: '1',
+  title: '迎新晚会',
+  status: 'published' as const,
+  startTime: '2023-09-01 19:00',
+  endTime: '2023-09-01 22:00',
+  location: '大学礼堂',
+  organizer: '学生会',
+  createdBy: '管理员',
+  createdAt: '2023-08-15',
+  updatedAt: '2023-08-20',
   content: `<div>
     <h2>迎新晚会</h2>
     <p>欢迎新同学加入我们的大家庭！</p>
@@ -45,23 +45,23 @@ const mockActivityDetail = {
     total: 120,
     approved: 98,
     rejected: 12,
-    pending: 10
-  }
+    pending: 10,
+  },
 }
 
 // 模拟活动数据库
 const mockActivitiesDB: Record<string, typeof mockActivityDetail> = {
-  "1": {
-    id: "1",
-    title: "迎新晚会",
-    status: "published" as const,
-    startTime: "2023-09-01 19:00",
-    endTime: "2023-09-01 22:00",
-    location: "大学礼堂",
-    organizer: "学生会",
-    createdBy: "管理员",
-    createdAt: "2023-08-15",
-    updatedAt: "2023-08-20",
+  1: {
+    id: '1',
+    title: '迎新晚会',
+    status: 'published' as const,
+    startTime: '2023-09-01 19:00',
+    endTime: '2023-09-01 22:00',
+    location: '大学礼堂',
+    organizer: '学生会',
+    createdBy: '管理员',
+    createdAt: '2023-08-15',
+    updatedAt: '2023-08-20',
     content: `<div>
       <h2>迎新晚会</h2>
       <p>欢迎新同学加入我们的大家庭！</p>
@@ -80,20 +80,20 @@ const mockActivitiesDB: Record<string, typeof mockActivityDetail> = {
       total: 120,
       approved: 98,
       rejected: 12,
-      pending: 10
-    }
+      pending: 10,
+    },
   },
-  "2": {
-    id: "2",
-    title: "校园歌手大赛",
-    status: "draft" as const,
-    startTime: "2023-10-15 14:00",
-    endTime: "2023-10-15 17:00",
-    location: "大学礼堂",
-    organizer: "学生会",
-    createdBy: "教师用户",
-    createdAt: "2023-09-20",
-    updatedAt: "2023-09-25",
+  2: {
+    id: '2',
+    title: '校园歌手大赛',
+    status: 'draft' as const,
+    startTime: '2023-10-15 14:00',
+    endTime: '2023-10-15 17:00',
+    location: '大学礼堂',
+    organizer: '学生会',
+    createdBy: '教师用户',
+    createdAt: '2023-09-20',
+    updatedAt: '2023-09-25',
     content: `<div>
       <h2>校园歌手大赛</h2>
       <p>展示你的歌唱才华！</p>
@@ -111,90 +111,90 @@ const mockActivitiesDB: Record<string, typeof mockActivityDetail> = {
       total: 85,
       approved: 65,
       rejected: 10,
-      pending: 10
-    }
-  }
+      pending: 10,
+    },
+  },
 }
 
 // 模拟报名数据
 const mockRegistrations = [
   {
-    id: "1",
-    studentId: "2023001",
-    studentName: "张三",
-    department: "计算机科学与技术系",
-    status: "pending" as const,
-    createdAt: "2023-08-20 10:30"
+    id: '1',
+    studentId: '2023001',
+    studentName: '张三',
+    department: '计算机科学与技术系',
+    status: 'pending' as const,
+    createdAt: '2023-08-20 10:30',
   },
   {
-    id: "2",
-    studentId: "2023002",
-    studentName: "李四",
-    department: "软件工程系",
-    status: "approved" as const,
-    createdAt: "2023-08-20 11:15"
+    id: '2',
+    studentId: '2023002',
+    studentName: '李四',
+    department: '软件工程系',
+    status: 'approved' as const,
+    createdAt: '2023-08-20 11:15',
   },
   {
-    id: "3",
-    studentId: "2022001",
-    studentName: "王五",
-    department: "电子工程系",
-    status: "pending" as const,
-    createdAt: "2023-08-21 14:45"
+    id: '3',
+    studentId: '2022001',
+    studentName: '王五',
+    department: '电子工程系',
+    status: 'pending' as const,
+    createdAt: '2023-08-21 14:45',
   },
   {
-    id: "4",
-    studentId: "2022003",
-    studentName: "赵六",
-    department: "通信工程系",
-    status: "rejected" as const,
-    createdAt: "2023-08-22 15:20"
-  }
+    id: '4',
+    studentId: '2022003',
+    studentName: '赵六',
+    department: '通信工程系',
+    status: 'rejected' as const,
+    createdAt: '2023-08-22 15:20',
+  },
 ]
 
 // 报名状态映射
 const registrationStatusMap = {
-  pending: { label: "待审核", color: "secondary" },
-  approved: { label: "已通过", color: "success" },
-  rejected: { label: "已拒绝", color: "destructive" }
+  pending: { label: '待审核', color: 'secondary' },
+  approved: { label: '已通过', color: 'success' },
+  rejected: { label: '已拒绝', color: 'destructive' },
 } as const
 
 // 报名表格列定义
 const registrationColumns = [
   {
-    accessorKey: "studentName",
-    header: "学生姓名",
+    accessorKey: 'studentName',
+    header: '学生姓名',
   },
   {
-    accessorKey: "studentId",
-    header: "学号",
+    accessorKey: 'studentId',
+    header: '学号',
   },
   {
-    accessorKey: "department",
-    header: "所属院系",
+    accessorKey: 'department',
+    header: '所属院系',
   },
   {
-    accessorKey: "status",
-    header: "状态",
+    accessorKey: 'status',
+    header: '状态',
     cell: ({ row }: { row: any }) => {
-      const status = row.getValue("status") as keyof typeof registrationStatusMap
+      const status = row.getValue('status') as keyof typeof registrationStatusMap
       const { label, color } = registrationStatusMap[status]
       return <Badge variant={color as any}>{label}</Badge>
-    }
+    },
   },
   {
-    accessorKey: "createdAt",
-    header: "报名时间",
+    accessorKey: 'createdAt',
+    header: '报名时间',
   },
   {
-    id: "actions",
-    header: "操作",
+    id: 'actions',
+    header: '操作',
     cell: ({ row }: { row: any }) => {
-      const status = row.getValue("status") as keyof typeof registrationStatusMap
-      
+      const status = row.getValue('status') as keyof typeof registrationStatusMap
+
       return (
         <div className="flex items-center gap-2">
-          {status === "pending" && (
+          {status === 'pending' && (
             <>
               <Button variant="outline" size="sm">
                 拒绝
@@ -206,8 +206,8 @@ const registrationColumns = [
           )}
         </div>
       )
-    }
-  }
+    },
+  },
 ]
 
 export function ActivityDetailPage() {
@@ -220,8 +220,8 @@ export function ActivityDetailPage() {
 
   // 从模拟数据库中获取活动详情
   const activity = mockActivitiesDB[activityId] || mockActivityDetail
-  const isArchived = activity.status === "archived"
-  
+  const isArchived = activity.status === 'archived'
+
   return (
     <div className="space-y-6">
       {/* 顶部导航栏 */}
@@ -235,7 +235,7 @@ export function ActivityDetailPage() {
             {activityStatusMap[activity.status].label}
           </Badge>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {!isArchived && (
             <Button variant="outline">
@@ -243,7 +243,7 @@ export function ActivityDetailPage() {
               编辑活动
             </Button>
           )}
-          {activity.status === "ended" && (
+          {activity.status === 'ended' && (
             <Button variant="outline">
               <FileDown className="mr-2 h-4 w-4" />
               归档活动
@@ -255,7 +255,7 @@ export function ActivityDetailPage() {
           </Button>
         </div>
       </div>
-      
+
       {/* 活动统计数据 */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
@@ -276,7 +276,10 @@ export function ActivityDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground">
-              通过率 {Math.round(activity.registrationCount.approved / activity.registrationCount.total * 100)}%
+              通过率
+              {' '}
+              {Math.round(activity.registrationCount.approved / activity.registrationCount.total * 100)}
+              %
             </div>
           </CardContent>
         </Card>
@@ -289,7 +292,11 @@ export function ActivityDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground">
-              待处理 {activity.registrationCount.pending} 条
+              待处理
+              {' '}
+              {activity.registrationCount.pending}
+              {' '}
+              条
             </div>
           </CardContent>
         </Card>
@@ -302,21 +309,24 @@ export function ActivityDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground">
-              拒绝率 {Math.round(activity.registrationCount.rejected / activity.registrationCount.total * 100)}%
+              拒绝率
+              {' '}
+              {Math.round(activity.registrationCount.rejected / activity.registrationCount.total * 100)}
+              %
             </div>
           </CardContent>
         </Card>
       </div>
-      
+
       {/* 选项卡 */}
       <div className="border-b">
         <div className="flex -mb-px">
           <button
             className={cn(
-              "py-2 px-4 border-b-2 font-medium text-sm",
-              activeTab === 'detail' 
-                ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              'py-2 px-4 border-b-2 font-medium text-sm',
+              activeTab === 'detail'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
             onClick={() => setActiveTab('detail')}
           >
@@ -324,10 +334,10 @@ export function ActivityDetailPage() {
           </button>
           <button
             className={cn(
-              "py-2 px-4 border-b-2 font-medium text-sm",
-              activeTab === 'registrations' 
-                ? "border-primary text-primary" 
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              'py-2 px-4 border-b-2 font-medium text-sm',
+              activeTab === 'registrations'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
             onClick={() => setActiveTab('registrations')}
           >
@@ -335,7 +345,7 @@ export function ActivityDetailPage() {
           </button>
         </div>
       </div>
-      
+
       {/* 选项卡内容 */}
       {activeTab === 'detail' ? (
         <div className="space-y-6">
@@ -376,7 +386,7 @@ export function ActivityDetailPage() {
               <div>{activity.updatedAt}</div>
             </div>
           </div>
-          
+
           {/* 活动内容 */}
           <div className="prose max-w-none border rounded-md p-4 bg-card">
             <div dangerouslySetInnerHTML={{ __html: activity.content }} />
@@ -384,12 +394,12 @@ export function ActivityDetailPage() {
         </div>
       ) : (
         <div>
-          <DataTable 
-            columns={registrationColumns} 
-            data={mockRegistrations} 
+          <DataTable
+            columns={registrationColumns}
+            data={mockRegistrations}
           />
         </div>
       )}
     </div>
   )
-} 
+}
