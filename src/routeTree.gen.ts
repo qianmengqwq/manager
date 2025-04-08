@@ -19,13 +19,13 @@ import { Route as IndexImport } from './routes/index'
 const AboutRoute = AboutImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRoute
 } as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRoute
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -83,7 +83,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
+  AboutRoute: AboutRoute
 }
 
 export const routeTree = rootRoute

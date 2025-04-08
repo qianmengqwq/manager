@@ -1,15 +1,15 @@
-import path from "path"
+import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'vite'
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react-swc'
-import {TanStackRouterVite} from '@tanstack/router-plugin/vite'
+import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [TanStackRouterVite({target: 'react',autoCodeSplitting: true}), react(),tailwindcss()],
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
+  plugins: [TanStackRouterVite({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
+  },
 })
