@@ -12,4 +12,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://123.57.206.172:8081',
+        timeout: 10000,
+        rewrite: path => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })
