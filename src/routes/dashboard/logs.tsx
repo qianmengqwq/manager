@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute } from '@tanstack/react-router'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Download, Filter, Search, X } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
@@ -31,9 +31,11 @@ import useSWR from 'swr'
 
 function LogsPage() {
   const [_isPending, startTransition] = useTransition()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [username, setUsername] = useState('')
   const [moduleFilter, setModuleFilter] = useState<string>('all')
+  const [levelFilter, setLevelFilter] = useState<number>(0)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
+
   const showLogDetail = useLogDetailModal()
 
   // 使用 nuqs 管理分页状态
@@ -46,10 +48,38 @@ function LogsPage() {
     pageSize,
   }), [page, pageSize])
 
+  // 准备过滤参数
+  const filters = useMemo(() => {
+    const filterParams: {
+      module?: string
+      username?: string
+      level?: number
+      dateFrom?: string
+      dateTo?: string
+    } = {}
+
+    if (moduleFilter && moduleFilter !== 'all')
+      filterParams.module = moduleFilter
+    if (username)
+      filterParams.username = username
+    if (levelFilter > 0)
+      filterParams.level = levelFilter
+
+    if (dateRange?.from) {
+      filterParams.dateFrom = format(dateRange.from, 'yyyy-MM-dd')
+    }
+
+    if (dateRange?.to) {
+      filterParams.dateTo = format(dateRange.to, 'yyyy-MM-dd')
+    }
+
+    return filterParams
+  }, [moduleFilter, username, levelFilter, dateRange])
+
   // 获取日志列表数据
   const { data, error, isLoading, mutate } = useSWR(
-    ['/api/eventlog/selectall', page, pageSize],
-    ([_url, page, pageSize]) => fetchEventLogs(page, pageSize),
+    ['/api/eventlog/selectall', page, pageSize, filters],
+    ([_url, page, pageSize, filters]) => fetchEventLogs(page, pageSize, filters),
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
@@ -68,42 +98,6 @@ function LogsPage() {
     console.error('获取日志列表错误:', error)
   }
 
-  // 过滤日志数据 - 仅针对当前页的数据进行筛选
-  const filteredLogs = useMemo(() => {
-    let filtered = logs || []
-
-    // 按模块筛选
-    if (moduleFilter !== 'all') {
-      filtered = filtered.filter(log => log.module === moduleFilter)
-    }
-
-    // 按日期范围筛选
-    if (dateRange?.from) {
-      const fromDate = new Date(dateRange.from)
-      fromDate.setHours(0, 0, 0, 0)
-      filtered = filtered.filter(log => new Date(log.eventtime.replace(/-/g, '/')) >= fromDate)
-    }
-
-    if (dateRange?.to) {
-      const toDate = new Date(dateRange.to)
-      toDate.setHours(23, 59, 59, 999)
-      filtered = filtered.filter(log => new Date(log.eventtime.replace(/-/g, '/')) <= toDate)
-    }
-
-    // 搜索过滤
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(log =>
-        log.event.toLowerCase().includes(term)
-        || log.username.toLowerCase().includes(term)
-        || log.module.toLowerCase().includes(term)
-        || log.ip.includes(term),
-      )
-    }
-
-    return filtered
-  }, [logs, searchTerm, moduleFilter, dateRange])
-
   // 获取可用的模块列表
   const moduleOptions = useMemo(() => {
     if (!logs.length)
@@ -115,15 +109,18 @@ function LogsPage() {
 
   // 重置所有筛选器
   const resetFilters = () => {
-    setSearchTerm('')
+    setUsername('')
     setModuleFilter('all')
+    setLevelFilter(0)
     setDateRange(undefined)
+    // 重置后刷新数据
+    mutate()
   }
 
   // 导出日志数据
   const handleExportLogs = async () => {
     try {
-      await exportEventLogs()
+      await exportEventLogs(filters)
       toast.success('日志导出成功')
     }
     catch (error) {
@@ -157,7 +154,7 @@ function LogsPage() {
 
   // 初始化表格
   const { table } = useDataTable({
-    data: filteredLogs,
+    data: logs,
     columns,
     pageCount,
     getRowId: row => row.eventid.toString(),
@@ -189,6 +186,11 @@ function LogsPage() {
     showLogDetail(row)
   }, [showLogDetail])
 
+  // 当筛选条件变化时刷新数据
+  const handleFilterChange = useCallback(() => {
+    mutate()
+  }, [mutate])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -208,16 +210,23 @@ function LogsPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="搜索日志..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="搜索用户名..."
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  onBlur={handleFilterChange}
+                  onKeyDown={e => e.key === 'Enter' && handleFilterChange()}
                   className="pl-8 w-64"
                 />
               </div>
 
               <Select
                 value={moduleFilter}
-                onValueChange={setModuleFilter}
+                onValueChange={(value) => {
+                  setModuleFilter(value)
+                  startTransition(() => {
+                    handleFilterChange()
+                  })
+                }}
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="所有模块" />
@@ -232,6 +241,25 @@ function LogsPage() {
                 </SelectContent>
               </Select>
 
+              <Select
+                value={levelFilter.toString()}
+                onValueChange={(value) => {
+                  setLevelFilter(Number.parseInt(value))
+                  startTransition(() => {
+                    handleFilterChange()
+                  })
+                }}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="所有级别" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">所有级别</SelectItem>
+                  <SelectItem value="1">管理员</SelectItem>
+                  <SelectItem value="2">普通用户</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
@@ -243,14 +271,21 @@ function LogsPage() {
                   <Calendar
                     mode="range"
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={(range) => {
+                      setDateRange(range)
+                      if (range?.from || range?.to) {
+                        startTransition(() => {
+                          handleFilterChange()
+                        })
+                      }
+                    }}
                     locale={zhCN}
                     className="rounded-md border"
                   />
                 </PopoverContent>
               </Popover>
 
-              {(searchTerm || moduleFilter !== 'all' || dateRange?.from || dateRange?.to) && (
+              {(username || moduleFilter !== 'all' || levelFilter > 0 || dateRange?.from || dateRange?.to) && (
                 <Button variant="ghost" size="icon" onClick={resetFilters}>
                   <X className="h-4 w-4" />
                 </Button>
@@ -262,11 +297,7 @@ function LogsPage() {
               {' '}
               {totalLogs}
               {' '}
-              条日志，当前显示
-              {' '}
-              {filteredLogs.length}
-              {' '}
-              条
+              条日志
             </div>
           </div>
 
