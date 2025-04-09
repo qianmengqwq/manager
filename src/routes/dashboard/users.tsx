@@ -1,3 +1,4 @@
+import type { UserFromResponse } from '@/types/user'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
@@ -34,103 +35,135 @@ import {
 import { useModalStack } from 'rc-modal-sheet'
 import { useCallback, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import useSWR from 'swr'
 
-// 用户状态类型
-type UserStatus = 'active' | 'inactive' | 'locked'
-
-// 用户角色类型
-type UserRole = 'admin' | 'manager' | 'member'
-
-// 用户类型定义
-interface User {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  department?: string
-  role: UserRole
-  status: UserStatus
-  lastLogin?: string
-  createdAt: string
+// API响应类型
+interface ApiResponse<T> {
+  code: number
+  msg: string | null
+  result: T
 }
 
-// 模拟用户数据
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: '张三',
-    email: 'zhangsan@example.com',
-    phone: '13800138001',
-    department: '研发部',
-    role: 'admin',
-    status: 'active',
-    lastLogin: '2023-09-15T08:30:00Z',
-    createdAt: '2023-01-10T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: '李四',
-    email: 'lisi@example.com',
-    phone: '13800138002',
-    department: '市场部',
-    role: 'manager',
-    status: 'active',
-    lastLogin: '2023-09-14T15:45:00Z',
-    createdAt: '2023-02-15T09:30:00Z',
-  },
-  {
-    id: '3',
-    name: '王五',
-    email: 'wangwu@example.com',
-    phone: '13800138003',
-    department: '人力资源部',
-    role: 'member',
-    status: 'inactive',
-    createdAt: '2023-03-20T14:20:00Z',
-  },
-  {
-    id: '4',
-    name: '赵六',
-    email: 'zhaoliu@example.com',
-    phone: '13800138004',
-    department: '财务部',
-    role: 'manager',
-    status: 'active',
-    lastLogin: '2023-09-10T11:20:00Z',
-    createdAt: '2023-04-05T16:15:00Z',
-  },
-  {
-    id: '5',
-    name: '钱七',
-    email: 'qianqi@example.com',
-    phone: '13800138005',
-    department: '产品部',
-    role: 'member',
-    status: 'locked',
-    lastLogin: '2023-08-25T09:10:00Z',
-    createdAt: '2023-05-12T13:40:00Z',
-  },
-  {
-    id: '6',
-    name: '孙八',
-    email: 'sunba@example.com',
-    phone: '13800138006',
-    department: '测试部',
-    role: 'member',
-    status: 'active',
-    lastLogin: '2023-09-13T14:30:00Z',
-    createdAt: '2023-06-18T10:25:00Z',
-  },
-]
+// 用户状态枚举
+enum UserStatus {
+  Active = 'active',
+  Inactive = 'inactive',
+  Locked = 'locked',
+}
+
+// 扩展用户类型
+interface ExtendedUser extends UserFromResponse {
+  status: UserStatus
+  lastLogin?: string
+}
+
+// 获取用户列表
+async function userFetcher(url: string, { page, pageSize }: { page: number, pageSize: number }) {
+  const response = await fetch(`/api${url}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ page, pageSize }),
+  })
+
+  if (!response.ok) {
+    throw new Error('获取用户列表失败')
+  }
+
+  const data = await response.json() as ApiResponse<UserFromResponse[]>
+
+  if (data.code !== 1000) {
+    throw new Error(data.msg || '获取用户列表失败')
+  }
+
+  // 扩展用户数据，添加状态（这里模拟状态，实际项目中可以根据具体业务逻辑判断）
+  const extendedUsers: ExtendedUser[] = data.result.map(user => ({
+    ...user,
+    status: Math.random() > 0.7
+      ? (Math.random() > 0.5 ? UserStatus.Inactive : UserStatus.Locked)
+      : UserStatus.Active,
+    lastLogin: Math.random() > 0.3 ? new Date().toISOString() : undefined,
+  }))
+
+  return {
+    data: extendedUsers,
+    total: data.result.length ? data.result.length * 3 : 0, // 假设总数是当前页的3倍，实际应该从API返回
+    page,
+    pageSize,
+  }
+}
+
+// 获取单个用户详情 (暂模拟数据，实际项目中应该调用真实API)
+async function getUserDetail(userId: number): Promise<ExtendedUser | null> {
+  try {
+    // 实际应该调用 `/api/user/detail/${userId}` 类似的接口
+    const response = await fetch(`/api/user/selectall`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ page: 1, pageSize: 100 }), // 获取用户详情时暂时请求更多数据
+    })
+
+    if (!response.ok) {
+      throw new Error('获取用户详情失败')
+    }
+
+    const data = await response.json() as ApiResponse<UserFromResponse[]>
+
+    if (data.code !== 1000) {
+      throw new Error(data.msg || '获取用户详情失败')
+    }
+
+    // 查找对应用户
+    const user = data.result.find(u => u.userid === userId)
+
+    if (!user) {
+      return null
+    }
+
+    // 扩展用户数据
+    return {
+      ...user,
+      status: Math.random() > 0.7
+        ? (Math.random() > 0.5 ? UserStatus.Inactive : UserStatus.Locked)
+        : UserStatus.Active,
+      lastLogin: Math.random() > 0.3 ? new Date().toISOString() : undefined,
+    }
+  }
+  catch {
+    console.error('获取用户详情失败')
+    return null
+  }
+}
 
 // 用户详情模态框
 function useUserDetailModal() {
   const { present } = useModalStack()
 
-  return useCallback((user: User) => {
+  return useCallback((userId: number) => {
     present({
       title: '用户详情',
       content: () => {
+        const [user, setUser] = useState<ExtendedUser | null>(null)
+        const [isLoading, setIsLoading] = useState(true)
+
+        // 获取用户详情
+        useSWR(['userDetail', userId], async () => {
+          setIsLoading(true)
+          try {
+            const detail = await getUserDetail(userId)
+            setUser(detail)
+          }
+          catch {
+            toast.error('获取用户详情失败')
+          }
+          finally {
+            setIsLoading(false)
+          }
+        })
+
         // 格式化日期
         const formatDate = (dateString?: string) => {
           if (!dateString)
@@ -145,13 +178,13 @@ function useUserDetailModal() {
         }
 
         // 用户状态标签
-        const statusBadge = () => {
-          switch (user.status) {
-            case 'active':
+        const statusBadge = (status: UserStatus) => {
+          switch (status) {
+            case UserStatus.Active:
               return <Badge className="bg-green-500">已激活</Badge>
-            case 'inactive':
+            case UserStatus.Inactive:
               return <Badge variant="outline">未激活</Badge>
-            case 'locked':
+            case UserStatus.Locked:
               return <Badge variant="destructive">已锁定</Badge>
             default:
               return null
@@ -159,54 +192,60 @@ function useUserDetailModal() {
         }
 
         // 用户角色标签
-        const roleBadge = () => {
-          switch (user.role) {
-            case 'admin':
+        const roleBadge = (level: number) => {
+          switch (level) {
+            case 1:
               return <Badge className="bg-blue-500">管理员</Badge>
-            case 'manager':
+            case 2:
               return <Badge className="bg-purple-500">部门主管</Badge>
-            case 'member':
+            case 3:
               return <Badge>普通成员</Badge>
             default:
-              return null
+              return (
+                <Badge>
+                  未知角色(
+                  {level}
+                  )
+                </Badge>
+              )
           }
+        }
+
+        if (isLoading) {
+          return <div className="py-8 text-center">加载中...</div>
+        }
+
+        if (!user) {
+          return <div className="py-8 text-center">用户不存在或已被删除</div>
         }
 
         return (
           <div className="space-y-4 py-2">
             <div className="flex items-center gap-4 mb-4">
               <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold">
-                {user.name.charAt(0)}
+                {user.username.charAt(0)}
               </div>
               <div>
-                <h3 className="text-lg font-semibold">{user.name}</h3>
+                <h3 className="text-lg font-semibold">{user.username}</h3>
                 <div className="flex gap-2 mt-1">
-                  {statusBadge()}
-                  {roleBadge()}
+                  {statusBadge(user.status)}
+                  {roleBadge(user.level)}
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <p className="text-sm font-medium text-muted-foreground">用户ID</p>
+                <p>{user.userid}</p>
+              </div>
+              <div>
                 <p className="text-sm font-medium text-muted-foreground">邮箱</p>
                 <p>{user.email}</p>
               </div>
-              {user.phone && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">手机号</p>
-                  <p>{user.phone}</p>
-                </div>
-              )}
-              {user.department && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">所属部门</p>
-                  <p>{user.department}</p>
-                </div>
-              )}
               <div>
-                <p className="text-sm font-medium text-muted-foreground">创建时间</p>
-                <p>{formatDate(user.createdAt)}</p>
+                <p className="text-sm font-medium text-muted-foreground">头像</p>
+                <p className="truncate">{user.profilepicture || '无'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">最后登录</p>
@@ -216,13 +255,13 @@ function useUserDetailModal() {
 
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline">关闭</Button>
-              {user.status === 'locked' && (
+              {user.status === UserStatus.Locked && (
                 <Button>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   解锁账户
                 </Button>
               )}
-              {user.status === 'active' && (
+              {user.status === UserStatus.Active && (
                 <Button variant="outline" className="text-amber-500 border-amber-500 hover:bg-amber-50">
                   <XCircle className="mr-2 h-4 w-4" />
                   锁定账户
@@ -240,13 +279,13 @@ function useUserDetailModal() {
 function useDeleteUserModal() {
   const { present } = useModalStack()
 
-  return useCallback((user: User) => {
+  return useCallback((user: ExtendedUser) => {
     present({
       title: '删除用户',
       content: () => {
         const onDelete = () => {
-          console.log('Deleting user:', user.id)
-          toast.success(`用户"${user.name}"已删除`)
+          console.log('Deleting user:', user.userid)
+          toast.success(`用户"${user.username}"已删除`)
         }
 
         return (
@@ -254,7 +293,7 @@ function useDeleteUserModal() {
             <p>
               确定要删除用户
               {' '}
-              <strong>{user.name}</strong>
+              <strong>{user.username}</strong>
               {' '}
               吗？此操作不可撤销。
             </p>
@@ -282,9 +321,39 @@ function UsersPage() {
   const showDetailModal = useUserDetailModal()
   const showDeleteModal = useDeleteUserModal()
 
-  // 过滤用户数据
+  // 分页设置
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+
+  // 计算当前页码和页大小
+  const page = pagination.pageIndex + 1 // 转为1-based索引
+  const pageSize = pagination.pageSize
+
+  // 获取用户列表数据
+  const { data, error, isLoading } = useSWR(
+    ['/user/selectall', page, pageSize],
+    () => userFetcher('/user/selectall', { page, pageSize }),
+    {
+      suspense: false,
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+    },
+  )
+
+  const users = data?.data || []
+  const totalUsers = data?.total || 0
+  const pageCount = Math.ceil(totalUsers / pageSize)
+
+  // 处理加载错误
+  if (error) {
+    toast.error('获取用户列表失败')
+  }
+
+  // 过滤用户数据 - 针对本地筛选
   const filteredUsers = useMemo(() => {
-    let filtered = mockUsers
+    let filtered = users || []
 
     // 按状态筛选
     if (statusFilter !== 'all') {
@@ -293,32 +362,45 @@ function UsersPage() {
 
     // 按角色筛选
     if (roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter)
+      const levelMap: Record<string, number> = {
+        admin: 1,
+        manager: 2,
+        member: 3,
+      }
+      filtered = filtered.filter(user => user.level === levelMap[roleFilter])
     }
 
     // 搜索过滤
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(term)
+        user.username.toLowerCase().includes(term)
         || user.email.toLowerCase().includes(term)
-        || (user.phone && user.phone.includes(term))
-        || (user.department && user.department.toLowerCase().includes(term)),
+        || String(user.userid).includes(term),
       )
     }
 
     return filtered
-  }, [searchTerm, statusFilter, roleFilter])
+  }, [users, searchTerm, statusFilter, roleFilter])
 
   // 定义表格列
-  const columns = useMemo<ColumnDef<User>[]>(() => [
+  const columns = useMemo<ColumnDef<ExtendedUser>[]>(() => [
     {
-      id: 'name',
-      accessorKey: 'name',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="姓名" />,
+      id: 'userid',
+      accessorKey: 'userid',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
       enableColumnFilter: true,
       meta: {
-        label: '姓名',
+        label: 'ID',
+      },
+    },
+    {
+      id: 'username',
+      accessorKey: 'username',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="用户名" />,
+      enableColumnFilter: true,
+      meta: {
+        label: '用户名',
       },
     },
     {
@@ -331,30 +413,26 @@ function UsersPage() {
       },
     },
     {
-      id: 'department',
-      accessorKey: 'department',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="部门" />,
-      cell: ({ row }) => row.original.department || '-',
-      enableColumnFilter: true,
-      meta: {
-        label: '部门',
-      },
-    },
-    {
-      id: 'role',
-      accessorKey: 'role',
+      id: 'level',
+      accessorKey: 'level',
       header: ({ column }) => <DataTableColumnHeader column={column} title="角色" />,
       cell: ({ row }) => {
-        const role = row.getValue('role') as UserRole
-        switch (role) {
-          case 'admin':
+        const level = row.original.level
+        switch (level) {
+          case 1:
             return <Badge className="bg-blue-500">管理员</Badge>
-          case 'manager':
+          case 2:
             return <Badge className="bg-purple-500">部门主管</Badge>
-          case 'member':
+          case 3:
             return <Badge>普通成员</Badge>
           default:
-            return '-'
+            return (
+              <Badge>
+                未知(
+                {level}
+                )
+              </Badge>
+            )
         }
       },
       enableColumnFilter: true,
@@ -369,11 +447,11 @@ function UsersPage() {
       cell: ({ row }) => {
         const status = row.getValue('status') as UserStatus
         switch (status) {
-          case 'active':
+          case UserStatus.Active:
             return <Badge className="bg-green-500">已激活</Badge>
-          case 'inactive':
+          case UserStatus.Inactive:
             return <Badge variant="outline">未激活</Badge>
-          case 'locked':
+          case UserStatus.Locked:
             return <Badge variant="destructive">已锁定</Badge>
           default:
             return '-'
@@ -417,7 +495,7 @@ function UsersPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>操作</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => showDetailModal(user)}>
+              <DropdownMenuItem onClick={() => showDetailModal(user.userid)}>
                 <Eye className="mr-2 h-4 w-4" />
                 查看详情
               </DropdownMenuItem>
@@ -425,13 +503,13 @@ function UsersPage() {
                 <Edit className="mr-2 h-4 w-4" />
                 编辑用户
               </DropdownMenuItem>
-              {user.status === 'active' && (
+              {user.status === UserStatus.Active && (
                 <DropdownMenuItem className="text-amber-500 focus:text-amber-500">
                   <XCircle className="mr-2 h-4 w-4" />
                   锁定账户
                 </DropdownMenuItem>
               )}
-              {user.status === 'locked' && (
+              {user.status === UserStatus.Locked && (
                 <DropdownMenuItem className="text-green-500 focus:text-green-500">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   解锁账户
@@ -455,11 +533,12 @@ function UsersPage() {
   const { table } = useDataTable({
     data: filteredUsers,
     columns,
-    pageCount: 1,
-    getRowId: row => row.id,
+    pageCount,
+    getRowId: row => String(row.userid),
     initialState: {
-      pagination: { pageSize: 10, pageIndex: 0 },
+      pagination,
     },
+    onPaginationChange: setPagination,
   })
 
   return (
@@ -472,61 +551,67 @@ function UsersPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap justify-between items-center py-4 gap-2">
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="搜索用户..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-8 w-64"
-            />
+      {isLoading && !data ? (
+        <div className="py-8 text-center">加载中...</div>
+      ) : (
+        <>
+          <div className="flex flex-wrap justify-between items-center py-4 gap-2">
+            <div className="flex flex-wrap gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索用户..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="pl-8 w-64"
+                />
+              </div>
+
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="所有状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">所有状态</SelectItem>
+                  <SelectItem value={UserStatus.Active}>已激活</SelectItem>
+                  <SelectItem value={UserStatus.Inactive}>未激活</SelectItem>
+                  <SelectItem value={UserStatus.Locked}>已锁定</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={roleFilter}
+                onValueChange={setRoleFilter}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="所有角色" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">所有角色</SelectItem>
+                  <SelectItem value="admin">管理员</SelectItem>
+                  <SelectItem value="manager">部门主管</SelectItem>
+                  <SelectItem value="member">普通成员</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              共
+              {' '}
+              {totalUsers}
+              {' '}
+              个用户
+            </div>
           </div>
 
-          <Select
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="所有状态" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有状态</SelectItem>
-              <SelectItem value="active">已激活</SelectItem>
-              <SelectItem value="inactive">未激活</SelectItem>
-              <SelectItem value="locked">已锁定</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={roleFilter}
-            onValueChange={setRoleFilter}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="所有角色" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有角色</SelectItem>
-              <SelectItem value="admin">管理员</SelectItem>
-              <SelectItem value="manager">部门主管</SelectItem>
-              <SelectItem value="member">普通成员</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="text-sm text-muted-foreground">
-          共
-          {' '}
-          {filteredUsers.length}
-          {' '}
-          个用户
-        </div>
-      </div>
-
-      <DataTable
-        table={table}
-      />
+          <DataTable
+            table={table}
+          />
+        </>
+      )}
     </div>
   )
 }

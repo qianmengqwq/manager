@@ -1,3 +1,5 @@
+import type { ApiResponse } from '@/types/api'
+import type { UserFromResponse } from '@/types/user'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -5,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useCaptcha } from '@/hooks/use-captcha'
+import { useUserStore } from '@/store/user'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
@@ -69,6 +72,7 @@ export function LoginPage() {
   const { captchaImage, isLoading: isCaptchaLoading, refreshCaptcha } = useCaptcha()
   // 存储验证码图片URL
   const [captchaUrl, setCaptchaUrl] = useState<string | null>(null)
+  const login = useUserStore(state => state.login)
 
   // 使用SWR Mutation进行登录请求
   const { trigger, isMutating } = useSWRMutation('/user/logon', loginFetcher)
@@ -117,15 +121,83 @@ export function LoginPage() {
       // 打印请求数据，方便调试
       console.log('登录请求数据:', { values })
 
-      const result = await trigger(values)
+      const result = await trigger(values) as ApiResponse<UserFromResponse>
       console.log('登录响应:', result)
 
       if (result && result.code === 1000) {
-        toast.success('登录成功')
-        navigate({ to: '/dashboard' })
+        // 获取用户头像
+        try {
+          // 检查profilepicture是否存在
+          if (result.result.profilepicture) {
+            const response = await fetch(`/api/user/getuserpic?key=${result.result.profilepicture}`)
+
+            if (!response.ok) {
+              throw new Error('获取头像失败')
+            }
+
+            const imageRes = await response.json()
+
+            if (imageRes.code !== 1000) {
+              throw new Error('获取头像失败')
+            }
+
+            const imageData = imageRes.result
+            console.log('头像数据:', imageData)
+
+            const pictureUrl = `data:image/jpeg;base64,${imageData}`
+
+            // 格式化用户数据，包含picture字段
+            const userData = {
+              userid: result.result.userid,
+              username: result.result.username,
+              email: result.result.email,
+              level: result.result.level,
+              profilepicture: result.result.profilepicture,
+              picture: pictureUrl, // 添加处理后的图片URL
+            }
+
+            console.log('用户数据:', userData)
+
+            // 存储用户信息到store
+            login(userData)
+          }
+          else {
+            // 如果没有头像，使用默认头像
+            const userData = {
+              userid: result.result.userid,
+              username: result.result.username,
+              email: result.result.email,
+              level: result.result.level,
+              profilepicture: result.result.profilepicture,
+              picture: '', // 默认为空字符串
+            }
+
+            // 存储用户信息到store
+            login(userData)
+          }
+
+          toast.success('登录成功')
+          navigate({ to: '/dashboard' })
+        }
+        catch (error) {
+          console.error('获取头像错误:', error)
+          // 即使获取头像失败，也允许用户登录
+          const userData = {
+            userid: result.result.userid,
+            username: result.result.username,
+            email: result.result.email,
+            level: result.result.level,
+            profilepicture: result.result.profilepicture,
+            picture: '', // 默认为空字符串
+          }
+
+          login(userData)
+          toast.success('登录成功，但获取头像失败')
+          navigate({ to: '/dashboard' })
+        }
       }
       else {
-        toast.error(result?.msg || '登录失败')
+        toast.error(result?.message || '登录失败')
         refreshCaptcha()
       }
     }
