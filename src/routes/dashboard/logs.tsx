@@ -1,12 +1,9 @@
 import type { EventLog } from '@/components/modules/logs/logType'
-import type { ColumnDef } from '@tanstack/react-table'
 import type { DateRange } from 'react-day-picker'
 import { DataTable } from '@/components/data-table/data-table'
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
+import { useColumns } from '@/components/modules/logs/columns'
 import { useLogDetailModal } from '@/components/modules/logs/LogModals'
 import { exportEventLogs, fetchEventLogs } from '@/components/modules/logs/LogService'
-import { getLevelText, getOperationType } from '@/components/modules/logs/logType'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
@@ -26,35 +23,38 @@ import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Download, Eye, Filter, Search, X } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Download, Filter, Search, X } from 'lucide-react'
+import { parseAsInteger, useQueryState } from 'nuqs'
+import { useCallback, useMemo, useState, useTransition } from 'react'
 import toast from 'react-hot-toast'
 import useSWR from 'swr'
 
 function LogsPage() {
+  const [_isPending, startTransition] = useTransition()
   const [searchTerm, setSearchTerm] = useState('')
   const [moduleFilter, setModuleFilter] = useState<string>('all')
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const showLogDetail = useLogDetailModal()
 
-  // 分页设置
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+  // 使用 nuqs 管理分页状态
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [pageSize, setPageSize] = useQueryState('pageSize', parseAsInteger.withDefault(10))
 
-  // 计算当前页码和页大小
-  const page = pagination.pageIndex + 1 // 转为1-based索引
-  const pageSize = pagination.pageSize
+  // 分页设置
+  const pagination = useMemo(() => ({
+    pageIndex: page - 1, // 转换为 0-based 索引
+    pageSize,
+  }), [page, pageSize])
 
   // 获取日志列表数据
-  const { data, error, isLoading } = useSWR(
-    ['/api/eventlog/selectall', pagination.pageIndex, pagination.pageSize],
-    ([_url, page, size]) => fetchEventLogs(page, size),
+  const { data, error, isLoading, mutate } = useSWR(
+    ['/api/eventlog/selectall', page, pageSize],
+    ([_url, page, pageSize]) => fetchEventLogs(page, pageSize),
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
       dedupingInterval: 0,
+      keepPreviousData: true, // 保持之前的数据，避免闪烁
     },
   )
 
@@ -133,137 +133,7 @@ function LogsPage() {
   }
 
   // 定义表格列
-  const columns = useMemo<ColumnDef<EventLog>[]>(() => [
-    {
-      id: 'eventtime',
-      accessorKey: 'eventtime',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="时间" />,
-      cell: ({ row }) => {
-        const timestamp = row.original.eventtime
-        return format(new Date(timestamp.replace(/-/g, '/')), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })
-      },
-      enableColumnFilter: true,
-      meta: {
-        label: '时间',
-        variant: 'date',
-      },
-    },
-    {
-      id: 'level',
-      accessorKey: 'level',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="级别" />,
-      cell: ({ row }) => {
-        const level = row.original.level
-        switch (level) {
-          case 1:
-            return <Badge className="bg-blue-500">管理员</Badge>
-          case 2:
-            return <Badge className="bg-purple-500">普通用户</Badge>
-          default:
-            return (
-              <Badge>
-                未知(
-                {level}
-                )
-              </Badge>
-            )
-        }
-      },
-      enableColumnFilter: true,
-      meta: {
-        label: '级别',
-      },
-    },
-    {
-      id: 'operation',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="操作类型" />,
-      cell: ({ row }) => {
-        const event = row.original.event
-        const operation = getOperationType(event)
-
-        const colorMap: Record<string, string> = {
-          查询: 'bg-gray-100 text-gray-800',
-          创建: 'bg-blue-100 text-blue-800',
-          更新: 'bg-amber-100 text-amber-800',
-          删除: 'bg-red-100 text-red-800',
-          登录: 'bg-green-100 text-green-800',
-          登出: 'bg-green-100 text-green-800',
-          发送: 'bg-indigo-100 text-indigo-800',
-          导入: 'bg-purple-100 text-purple-800',
-          导出: 'bg-purple-100 text-purple-800',
-        }
-
-        const color = colorMap[operation] || 'bg-gray-100 text-gray-800'
-        return <Badge variant="outline" className={color}>{operation}</Badge>
-      },
-      enableColumnFilter: true,
-      meta: {
-        label: '操作类型',
-      },
-    },
-    {
-      id: 'module',
-      accessorKey: 'module',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="模块" />,
-      enableColumnFilter: true,
-      meta: {
-        label: '模块',
-      },
-    },
-    {
-      id: 'event',
-      accessorKey: 'event',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="事件内容" />,
-      cell: ({ row }) => {
-        const event = row.original.event
-        // 截取一部分显示
-        return (
-          <span className="truncate max-w-[200px] block" title={event}>
-            {event.length > 50 ? `${event.substring(0, 50)}...` : event}
-          </span>
-        )
-      },
-      enableColumnFilter: true,
-      meta: {
-        label: '事件内容',
-      },
-    },
-    {
-      id: 'username',
-      accessorKey: 'username',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="操作人" />,
-      enableColumnFilter: true,
-      meta: {
-        label: '操作人',
-      },
-    },
-    {
-      id: 'ip',
-      accessorKey: 'ip',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="IP地址" />,
-      enableColumnFilter: true,
-      meta: {
-        label: 'IP地址',
-      },
-    },
-    {
-      id: 'actions',
-      header: '操作',
-      cell: ({ row }) => {
-        const log = row.original
-        return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => showLogDetail(log)}
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            详情
-          </Button>
-        )
-      },
-    },
-  ], [showLogDetail])
+  const columns = useColumns({ showLogDetail })
 
   // 格式化日期显示
   const formatDateRange = () => {
@@ -294,7 +164,24 @@ function LogsPage() {
     initialState: {
       pagination,
     },
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      startTransition(() => {
+        if (typeof updater === 'function') {
+          const newPagination = updater(pagination)
+          setPage(newPagination.pageIndex + 1)
+          setPageSize(newPagination.pageSize)
+        }
+        else {
+          setPage(updater.pageIndex + 1)
+          setPageSize(updater.pageSize)
+        }
+        // 触发数据重新获取
+        mutate()
+      })
+    },
+    shallow: false, // 禁用浅层更新，确保每次分页变化都会触发网络请求
+    throttleMs: 50, // 控制 URL 更新的频率
+    startTransition, // 使用 startTransition 来处理状态更新
   })
 
   // 双击行打开详情
@@ -384,6 +271,7 @@ function LogsPage() {
           </div>
 
           <DataTable
+            className="max-h-[583px]"
             table={table}
             onRowDoubleClick={handleRowDoubleClick}
           />
