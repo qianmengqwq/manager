@@ -1,5 +1,6 @@
 import type { UserFromResponse } from '@/types/user'
 import type { UserFormValues } from './userType'
+import { Button } from '@/components/ui/button'
 import { useUserStore } from '@/store/user'
 import { useModalStack } from 'rc-modal-sheet'
 import { useCallback, useEffect, useState } from 'react'
@@ -195,10 +196,6 @@ export function useAddUserModal() {
               await performAddUser()
             }
             catch (error) {
-              console.error({ error})
-              console.error('添加用户错误:', error)
-              console.error(error instanceof Error ? error.message : '未知nmb错误')
-
               // 检查是否需要二级验证
               const errorMessage = error instanceof Error ? error.message : '未知错误'
               if (errorMessage.includes('二级验证') || (error as any)?.code === 1001) {
@@ -236,6 +233,27 @@ export function useEditUserModal() {
       title: '编辑用户',
       content: (props) => {
         const [isSubmitting, setIsSubmitting] = useState(false)
+        const [userDetail, setUserDetail] = useState<UserFromResponse | null>(null)
+        const [isLoading, setIsLoading] = useState(true)
+
+        // 获取用户详情
+        useEffect(() => {
+          const fetchData = async () => {
+            try {
+              const detail = await fetchUserDetail(user.userid)
+              setUserDetail(detail)
+            }
+            catch (error) {
+              console.error('获取用户详情失败:', error)
+              toast.error('获取用户详情失败')
+            }
+            finally {
+              setIsLoading(false)
+            }
+          }
+
+          fetchData()
+        }, [user.userid])
 
         const handleSubmit = async (values: UserFormValues) => {
           setIsSubmitting(true)
@@ -266,8 +284,6 @@ export function useEditUserModal() {
               await performUpdateUser()
             }
             catch (error) {
-              console.error({ error})
-
               // 检查是否需要二级验证
               const errorMessage = error instanceof Error ? error.message : '未知错误'
               if (errorMessage.includes('二级验证') || (error as any)?.code === 1001) {
@@ -282,9 +298,17 @@ export function useEditUserModal() {
           }
         }
 
+        if (isLoading) {
+          return <div className="py-8 text-center">加载中...</div>
+        }
+
+        if (!userDetail) {
+          return <div className="py-8 text-center">用户不存在或已被删除</div>
+        }
+
         return (
           <UserForm
-            user={user}
+            user={userDetail}
             onSubmit={handleSubmit}
             onCancel={props.dismiss}
             submitText="保存"
@@ -363,4 +387,62 @@ export function useDeleteUserModal() {
       },
     })
   }, [present, showVerifyModal])
+}
+
+// 踢下线确认模态框
+export function useKickOutModal() {
+  const { present } = useModalStack()
+
+  return useCallback((user: UserFromResponse) => {
+    present({
+      title: '确认踢下线',
+      content: () => (
+        <div className="space-y-4">
+          <p>
+            确定要将用户
+            {user.username}
+            {' '}
+            踢下线吗？
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                present({ title: '', content: () => null })
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  const response = await fetch(
+                    `/api/user/kickout?userid=${user.userid}&level=${user.level}`,
+                  )
+
+                  if (!response.ok) {
+                    throw new Error('踢下线失败')
+                  }
+
+                  const data = await response.json()
+                  if (data.code !== 1000) {
+                    throw new Error(data.message || '踢下线失败')
+                  }
+
+                  toast.success('踢下线成功')
+                  present({ title: '', content: () => null })
+                }
+                catch (error) {
+                  toast.error(error instanceof Error ? error.message : '踢下线失败')
+                }
+              }}
+            >
+              确认踢下线
+            </Button>
+          </div>
+        </div>
+      ),
+    })
+  }, [present])
 }

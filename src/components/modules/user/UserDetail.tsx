@@ -1,73 +1,27 @@
 import type { UserFromResponse } from '@/types/user'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { USER_ROLE_MAP } from './userType'
+import { UserAvatar } from '@/components/modules/image'
 
 interface UserDetailProps {
   user: UserFromResponse
   avatarUrl?: string
+  onAvatarUpdate?: (newProfilePicture: string) => void
 }
 
-export function UserDetail({ user, avatarUrl }: UserDetailProps) {
-  const [imageUrl, setImageUrl] = useState<string | null>(avatarUrl || null)
-
-  useEffect(() => {
-    // 如果没有提供头像URL且用户有profilepicture，则尝试获取头像
-    if (!avatarUrl && user.profilepicture) {
-      const fetchAvatar = async () => {
-        try {
-          const response = await fetch(`/api/user/getuserpic?key=${user.profilepicture}`)
-
-          if (!response.ok) {
-            throw new Error('获取头像失败')
-          }
-
-          const data = await response.json()
-
-          if (data.code !== 1000) {
-            throw new Error('获取头像失败')
-          }
-
-          const imageData = data.result
-          const pictureUrl = `data:image/jpeg;base64,${imageData}`
-          setImageUrl(pictureUrl)
-        }
-        catch (error) {
-          console.error('获取头像失败:', error)
-        }
-      }
-
-      fetchAvatar()
-    }
-  }, [avatarUrl, user.profilepicture])
-
-  const roleBadge = (level: number) => {
-    switch (level) {
-      case 1:
-        return <Badge className="bg-blue-500">管理员</Badge>
-      case 2:
-        return <Badge className="bg-purple-500">普通用户</Badge>
-      default:
-        return (
-          <Badge>
-            未知角色(
-            {level}
-            )
-          </Badge>
-        )
-    }
-  }
-
+export function UserDetail({ user, avatarUrl, onAvatarUpdate }: UserDetailProps) {
   return (
     <div className="space-y-4 py-2">
       <div className="flex items-center gap-4 mb-4">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={imageUrl || undefined} alt={user.username} />
-          <AvatarFallback className="text-2xl font-semibold">
-            {user.username.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          userId={user.userid}
+          username={user.username}
+          profilePicture={user.profilepicture}
+          size="lg"
+          editable
+          onAvatarUpdate={onAvatarUpdate}
+        />
         <div>
           <h3 className="text-lg font-semibold">{user.username}</h3>
           <div className="flex gap-2 mt-1">
@@ -96,4 +50,21 @@ export function UserDetail({ user, avatarUrl }: UserDetailProps) {
       </div>
     </div>
   )
+}
+
+function roleBadge(level: number) {
+  switch (level) {
+    case 1:
+      return <Badge className="bg-blue-500">管理员</Badge>
+    case 2:
+      return <Badge className="bg-purple-500">普通用户</Badge>
+    default:
+      return (
+        <Badge>
+          未知角色(
+          {level}
+          )
+        </Badge>
+      )
+  }
 }

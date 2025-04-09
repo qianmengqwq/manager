@@ -9,7 +9,7 @@ export const userFormSchema = z.object({
   password: z.string().min(6, '密码至少需要6个字符'),
   email: z.string().email('请输入有效的邮箱地址'),
   level: z.number().int().min(1).max(2),
-  profilepicture: z.string().optional().default(''),
+  profilepicture: z.string().optional(),
 })
 
 // 表单值类型

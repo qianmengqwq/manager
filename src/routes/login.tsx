@@ -1,5 +1,5 @@
 import type { ApiResponse } from '@/types/api'
-import type { UserFromResponse } from '@/types/user'
+import type { UserFromResponse, UserZustand } from '@/types/user'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -159,7 +159,7 @@ export function LoginPage() {
             console.log('用户数据:', userData)
 
             // 存储用户信息到store
-            login(userData)
+            login(userData as UserZustand)
           }
           else {
             // 如果没有头像，使用默认头像
@@ -173,7 +173,7 @@ export function LoginPage() {
             }
 
             // 存储用户信息到store
-            login(userData)
+            login(userData as UserZustand)
           }
 
           toast.success('登录成功')
@@ -191,13 +191,13 @@ export function LoginPage() {
             picture: '', // 默认为空字符串
           }
 
-          login(userData)
+          login(userData as UserZustand)
           toast.success('登录成功，但获取头像失败')
           navigate({ to: '/dashboard' })
         }
       }
       else {
-        toast.error(result?.message || '登录失败')
+        toast.error(result?.msg || '登录失败')
         refreshCaptcha()
       }
     }

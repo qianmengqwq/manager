@@ -29,7 +29,7 @@ import {
 import * as React from 'react'
 
 const PAGE_KEY = 'page'
-const PER_PAGE_KEY = 'perPage'
+const PER_PAGE_KEY = 'pageSize'
 const SORT_KEY = 'sort'
 const ARRAY_SEPARATOR = ','
 const DEBOUNCE_MS = 300

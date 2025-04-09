@@ -4,59 +4,44 @@ import type { UserFormValues, UserListResult } from './userType'
 import { checkVerifyExpired, useUserStore } from '@/store/user'
 
 // 获取用户列表
-export async function fetchUsers(page: number, pageSize: number) {
-  const response = await fetch(`/api/user/selectall`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ page, pageSize }),
+export async function fetchUsers() {
+  const response = await fetch('/api/user/selectalluser', {
+    method: 'GET',
   })
 
   if (!response.ok) {
     throw new Error('获取用户列表失败')
   }
 
-  const data = await response.json() as ApiResponse<UserListResult>
-
+  const data = await response.json()
   if (data.code !== 1000) {
-    throw new Error(data.msg || '获取用户列表失败')
+    throw new Error(data.message || '获取用户列表失败')
   }
 
-  return {
-    data: data.result.rows,
-    total: data.result.total || 0,
-    pageTotal: data.result.pageTotal || 0,
-    page,
-    pageSize,
-  }
+  return data
 }
 
 // 获取单个用户详情
-export async function fetchUserDetail(userId: number): Promise<UserFromResponse | null> {
+export async function fetchUserDetail(userId: number) {
   // 这里没有实现对应的接口，毕竟也没有真正的需要
   // 直接传row实际上是够展示的，这里只是为了保持功能写法上的一致
   try {
-    const response = await fetch(`/api/user/selectall`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ page: 1, pageSize: 100 }),
+    const response = await fetch(`/api/user/selectalluser`, {
+      method: 'GET',
     })
 
     if (!response.ok) {
       throw new Error('获取用户详情失败')
     }
 
-    const data = await response.json() as ApiResponse<UserListResult>
+    const data = await response.json()
 
     if (data.code !== 1000) {
       throw new Error(data.msg || '获取用户详情失败')
     }
 
     // 从rows数组中查找对应用户
-    const user = data.result.rows.find(u => u.userid === userId)
+    const user = data.result.find((u: UserFromResponse) => u.userid === userId)
 
     if (!user) {
       return null
@@ -208,37 +193,4 @@ export function isSecondaryVerifyRequired(error: unknown): boolean {
   }
 
   return false
-}
-
-// 上传用户头像
-export async function uploadUserPicture(userId: number, file: File) {
-  try {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('userid', userId.toString())
-
-    const response = await fetch(`/api/user/uploadpic`, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new Error('上传头像失败')
-    }
-
-    // 添加详细的控制台日志，帮助调试
-    const data = await response.json()
-    console.log('头像上传响应:', data)
-
-    if (data.code !== 1000) {
-      throw new Error(data.msg || '上传头像失败')
-    }
-
-    // 返回完整响应以便后续处理
-    return data
-  }
-  catch (error) {
-    console.error('上传头像错误:', error)
-    throw error
-  }
 }

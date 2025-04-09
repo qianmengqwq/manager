@@ -1,5 +1,5 @@
+import type { UserFromResponse } from '@/types/user'
 import { Button } from '@/components/ui/button'
-import { UserFromResponse } from '@/types/user'
 
 interface DeleteConfirmProps {
   user: UserFromResponse
@@ -8,11 +8,11 @@ interface DeleteConfirmProps {
   isDeleting?: boolean
 }
 
-export function DeleteConfirm({ 
-  user, 
-  onDelete, 
+export function DeleteConfirm({
+  user,
+  onDelete,
   onCancel,
-  isDeleting = false 
+  isDeleting = false,
 }: DeleteConfirmProps) {
   return (
     <div className="space-y-4 py-2">
@@ -38,4 +38,4 @@ export function DeleteConfirm({
       </div>
     </div>
   )
-} 
+}

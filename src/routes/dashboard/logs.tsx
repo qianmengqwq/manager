@@ -1,6 +1,11 @@
+import type { EventLog } from '@/components/modules/logs/logType'
 import type { ColumnDef } from '@tanstack/react-table'
+import type { DateRange } from 'react-day-picker'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
+import { useLogDetailModal } from '@/components/modules/logs/LogModals'
+import { exportEventLogs, fetchEventLogs } from '@/components/modules/logs/LogService'
+import { getLevelText, getOperationType } from '@/components/modules/logs/logType'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -22,389 +27,120 @@ import { createFileRoute } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Download, Eye, Filter, Search, X } from 'lucide-react'
-import { useModalStack } from 'rc-modal-sheet'
 import { useCallback, useMemo, useState } from 'react'
-
-// 日志类型
-type LogLevel = 'info' | 'warning' | 'error' | 'critical'
-
-// 日志操作类型
-type LogOperation = 'login' | 'logout' | 'create' | 'update' | 'delete' | 'export' | 'import' | 'view'
-
-// 日志定义
-interface Log {
-  id: string
-  timestamp: string
-  level: LogLevel
-  operation: LogOperation
-  module: string
-  message: string
-  user: {
-    id: string
-    name: string
-  }
-  ip: string
-  userAgent?: string
-  details?: Record<string, any>
-}
-
-// 模拟日志数据
-const mockLogs: Log[] = [
-  {
-    id: '1',
-    timestamp: '2023-09-18T09:15:30Z',
-    level: 'info',
-    operation: 'login',
-    module: '认证模块',
-    message: '用户登录成功',
-    user: {
-      id: '101',
-      name: '张三',
-    },
-    ip: '192.168.1.100',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
-  },
-  {
-    id: '2',
-    timestamp: '2023-09-18T10:25:15Z',
-    level: 'error',
-    operation: 'update',
-    module: '用户管理',
-    message: '更新用户信息失败',
-    user: {
-      id: '102',
-      name: '李四',
-    },
-    ip: '192.168.1.101',
-    details: {
-      error: '数据库连接超时',
-      userId: '305',
-      attemptedFields: ['email', 'phone'],
-    },
-  },
-  {
-    id: '3',
-    timestamp: '2023-09-18T11:30:45Z',
-    level: 'warning',
-    operation: 'delete',
-    module: '部门管理',
-    message: '删除部门操作',
-    user: {
-      id: '101',
-      name: '张三',
-    },
-    ip: '192.168.1.100',
-    details: {
-      departmentId: 'D-2023-09',
-      departmentName: '财务部',
-      affectedUsers: 12,
-    },
-  },
-  {
-    id: '4',
-    timestamp: '2023-09-18T13:45:20Z',
-    level: 'info',
-    operation: 'export',
-    module: '报表系统',
-    message: '导出报表数据',
-    user: {
-      id: '103',
-      name: '王五',
-    },
-    ip: '192.168.1.102',
-    details: {
-      reportType: '月度财务报表',
-      format: 'Excel',
-      period: '2023-08',
-    },
-  },
-  {
-    id: '5',
-    timestamp: '2023-09-18T15:10:00Z',
-    level: 'critical',
-    operation: 'update',
-    module: '系统配置',
-    message: '系统配置修改失败',
-    user: {
-      id: '104',
-      name: '管理员',
-    },
-    ip: '192.168.1.1',
-    details: {
-      configName: 'DATABASE_CONNECTION',
-      error: '权限不足',
-    },
-  },
-  {
-    id: '6',
-    timestamp: '2023-09-18T16:20:30Z',
-    level: 'info',
-    operation: 'create',
-    module: '用户管理',
-    message: '创建新用户',
-    user: {
-      id: '101',
-      name: '张三',
-    },
-    ip: '192.168.1.100',
-    details: {
-      newUserId: '312',
-      username: 'newuser@example.com',
-      role: 'member',
-    },
-  },
-  {
-    id: '7',
-    timestamp: '2023-09-18T17:05:10Z',
-    level: 'info',
-    operation: 'logout',
-    module: '认证模块',
-    message: '用户登出系统',
-    user: {
-      id: '103',
-      name: '王五',
-    },
-    ip: '192.168.1.102',
-  },
-  {
-    id: '8',
-    timestamp: '2023-09-19T09:10:00Z',
-    level: 'error',
-    operation: 'import',
-    module: '数据导入',
-    message: '数据导入失败',
-    user: {
-      id: '102',
-      name: '李四',
-    },
-    ip: '192.168.1.101',
-    details: {
-      fileName: 'employees_data.xlsx',
-      error: '格式错误',
-      position: 'Row 15, Column C',
-    },
-  },
-  {
-    id: '9',
-    timestamp: '2023-09-19T10:30:45Z',
-    level: 'warning',
-    operation: 'view',
-    module: '敏感数据',
-    message: '查看敏感信息',
-    user: {
-      id: '102',
-      name: '李四',
-    },
-    ip: '192.168.1.101',
-    details: {
-      dataType: '员工薪资信息',
-      departmentId: 'D-2023-10',
-    },
-  },
-  {
-    id: '10',
-    timestamp: '2023-09-19T11:45:20Z',
-    level: 'info',
-    operation: 'create',
-    module: '部门管理',
-    message: '创建新部门',
-    user: {
-      id: '104',
-      name: '管理员',
-    },
-    ip: '192.168.1.1',
-    details: {
-      departmentId: 'D-2023-11',
-      departmentName: '新媒体部',
-      parentDepartment: '市场营销中心',
-    },
-  },
-]
-
-// 日志详情模态框
-function useLogDetailModal() {
-  const { present } = useModalStack()
-
-  return useCallback((log: Log) => {
-    present({
-      title: '日志详情',
-      content: () => {
-        // 格式化日期
-        const formatDate = (dateString: string) => {
-          return new Date(dateString).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })
-        }
-
-        // 日志级别标签
-        const getLevelBadge = (level: LogLevel) => {
-          switch (level) {
-            case 'info':
-              return <Badge className="bg-blue-500">信息</Badge>
-            case 'warning':
-              return <Badge className="bg-yellow-500">警告</Badge>
-            case 'error':
-              return <Badge className="bg-red-500">错误</Badge>
-            case 'critical':
-              return <Badge className="bg-purple-700">严重</Badge>
-            default:
-              return null
-          }
-        }
-
-        // 操作类型
-        const getOperationText = (operation: LogOperation) => {
-          const operationMap: Record<LogOperation, string> = {
-            login: '登录',
-            logout: '登出',
-            create: '创建',
-            update: '更新',
-            delete: '删除',
-            export: '导出',
-            import: '导入',
-            view: '查看',
-          }
-          return operationMap[operation] || operation
-        }
-
-        return (
-          <div className="space-y-4 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {getLevelBadge(log.level)}
-                <span className="text-muted-foreground text-sm">
-                  {formatDate(log.timestamp)}
-                </span>
-              </div>
-              <Badge variant="outline">{log.module}</Badge>
-            </div>
-
-            <div className="bg-muted p-3 rounded-md">
-              <p className="font-medium">{log.message}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">操作人</p>
-                <p>
-                  {log.user.name}
-                  {' '}
-                  (ID:
-                  {' '}
-                  {log.user.id}
-                  )
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">操作类型</p>
-                <p>{getOperationText(log.operation)}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">IP地址</p>
-                <p>{log.ip}</p>
-              </div>
-              {log.userAgent && (
-                <div className="col-span-2">
-                  <p className="text-sm font-medium text-muted-foreground">客户端</p>
-                  <p className="text-sm truncate">{log.userAgent}</p>
-                </div>
-              )}
-            </div>
-
-            {log.details && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">详细信息</p>
-                <div className="bg-muted p-3 rounded-md overflow-auto max-h-60">
-                  <pre className="text-xs whitespace-pre-wrap">
-                    {JSON.stringify(log.details, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-4">
-              <Button variant="outline">关闭</Button>
-            </div>
-          </div>
-        )
-      },
-    })
-  }, [present])
-}
+import toast from 'react-hot-toast'
+import useSWR from 'swr'
 
 function LogsPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [levelFilter, setLevelFilter] = useState<string>('all')
-  const [operationFilter, setOperationFilter] = useState<string>('all')
-  const [dateRange, setDateRange] = useState<{ from?: Date, to?: Date }>({})
+  const [moduleFilter, setModuleFilter] = useState<string>('all')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const showLogDetail = useLogDetailModal()
 
-  // 过滤日志数据
+  // 分页设置
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+
+  // 计算当前页码和页大小
+  const page = pagination.pageIndex + 1 // 转为1-based索引
+  const pageSize = pagination.pageSize
+
+  // 获取日志列表数据
+  const { data, error, isLoading } = useSWR(
+    ['/api/eventlog/selectall', pagination.pageIndex, pagination.pageSize],
+    ([_url, page, size]) => fetchEventLogs(page, size),
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0,
+    },
+  )
+
+  const logs = data?.data || []
+  const totalLogs = data?.total || 0
+  const pageCount = Math.ceil(totalLogs / pageSize)
+
+  // 处理加载错误
+  if (error) {
+    toast.error('获取日志列表失败')
+    console.error('获取日志列表错误:', error)
+  }
+
+  // 过滤日志数据 - 仅针对当前页的数据进行筛选
   const filteredLogs = useMemo(() => {
-    let filtered = mockLogs
+    let filtered = logs || []
 
-    // 按级别筛选
-    if (levelFilter !== 'all') {
-      filtered = filtered.filter(log => log.level === levelFilter)
-    }
-
-    // 按操作类型筛选
-    if (operationFilter !== 'all') {
-      filtered = filtered.filter(log => log.operation === operationFilter)
+    // 按模块筛选
+    if (moduleFilter !== 'all') {
+      filtered = filtered.filter(log => log.module === moduleFilter)
     }
 
     // 按日期范围筛选
-    if (dateRange.from) {
+    if (dateRange?.from) {
       const fromDate = new Date(dateRange.from)
       fromDate.setHours(0, 0, 0, 0)
-      filtered = filtered.filter(log => new Date(log.timestamp) >= fromDate)
+      filtered = filtered.filter(log => new Date(log.eventtime.replace(/-/g, '/')) >= fromDate)
     }
 
-    if (dateRange.to) {
+    if (dateRange?.to) {
       const toDate = new Date(dateRange.to)
       toDate.setHours(23, 59, 59, 999)
-      filtered = filtered.filter(log => new Date(log.timestamp) <= toDate)
+      filtered = filtered.filter(log => new Date(log.eventtime.replace(/-/g, '/')) <= toDate)
     }
 
     // 搜索过滤
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(log =>
-        log.message.toLowerCase().includes(term)
-        || log.user.name.toLowerCase().includes(term)
+        log.event.toLowerCase().includes(term)
+        || log.username.toLowerCase().includes(term)
         || log.module.toLowerCase().includes(term)
         || log.ip.includes(term),
       )
     }
 
-    // 按时间倒序排序（最新的在前面）
-    return [...filtered].sort((a, b) =>
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    )
-  }, [searchTerm, levelFilter, operationFilter, dateRange])
+    return filtered
+  }, [logs, searchTerm, moduleFilter, dateRange])
+
+  // 获取可用的模块列表
+  const moduleOptions = useMemo(() => {
+    if (!logs.length)
+      return []
+
+    const modules = [...new Set(logs.map(log => log.module))]
+    return modules.sort()
+  }, [logs])
 
   // 重置所有筛选器
   const resetFilters = () => {
     setSearchTerm('')
-    setLevelFilter('all')
-    setOperationFilter('all')
-    setDateRange({})
+    setModuleFilter('all')
+    setDateRange(undefined)
+  }
+
+  // 导出日志数据
+  const handleExportLogs = async () => {
+    try {
+      await exportEventLogs()
+      toast.success('日志导出成功')
+    }
+    catch (error) {
+      console.error('导出日志失败:', error)
+      toast.error('导出日志失败')
+    }
   }
 
   // 定义表格列
-  const columns = useMemo<ColumnDef<Log>[]>(() => [
+  const columns = useMemo<ColumnDef<EventLog>[]>(() => [
     {
-      id: 'timestamp',
-      accessorKey: 'timestamp',
+      id: 'eventtime',
+      accessorKey: 'eventtime',
       header: ({ column }) => <DataTableColumnHeader column={column} title="时间" />,
       cell: ({ row }) => {
-        const timestamp = row.getValue('timestamp') as string
-        return format(new Date(timestamp), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })
+        const timestamp = row.original.eventtime
+        return format(new Date(timestamp.replace(/-/g, '/')), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })
       },
       enableColumnFilter: true,
       meta: {
@@ -417,18 +153,20 @@ function LogsPage() {
       accessorKey: 'level',
       header: ({ column }) => <DataTableColumnHeader column={column} title="级别" />,
       cell: ({ row }) => {
-        const level = row.getValue('level') as LogLevel
+        const level = row.original.level
         switch (level) {
-          case 'info':
-            return <Badge className="bg-blue-500">信息</Badge>
-          case 'warning':
-            return <Badge className="bg-yellow-500">警告</Badge>
-          case 'error':
-            return <Badge className="bg-red-500">错误</Badge>
-          case 'critical':
-            return <Badge className="bg-purple-700">严重</Badge>
+          case 1:
+            return <Badge className="bg-blue-500">管理员</Badge>
+          case 2:
+            return <Badge className="bg-purple-500">普通用户</Badge>
           default:
-            return null
+            return (
+              <Badge>
+                未知(
+                {level}
+                )
+              </Badge>
+            )
         }
       },
       enableColumnFilter: true,
@@ -438,23 +176,25 @@ function LogsPage() {
     },
     {
       id: 'operation',
-      accessorKey: 'operation',
       header: ({ column }) => <DataTableColumnHeader column={column} title="操作类型" />,
       cell: ({ row }) => {
-        const operation = row.getValue('operation') as LogOperation
-        const operationMap: Record<LogOperation, { text: string, color: string }> = {
-          login: { text: '登录', color: 'bg-green-100 text-green-800' },
-          logout: { text: '登出', color: 'bg-green-100 text-green-800' },
-          create: { text: '创建', color: 'bg-blue-100 text-blue-800' },
-          update: { text: '更新', color: 'bg-amber-100 text-amber-800' },
-          delete: { text: '删除', color: 'bg-red-100 text-red-800' },
-          export: { text: '导出', color: 'bg-purple-100 text-purple-800' },
-          import: { text: '导入', color: 'bg-purple-100 text-purple-800' },
-          view: { text: '查看', color: 'bg-gray-100 text-gray-800' },
+        const event = row.original.event
+        const operation = getOperationType(event)
+
+        const colorMap: Record<string, string> = {
+          查询: 'bg-gray-100 text-gray-800',
+          创建: 'bg-blue-100 text-blue-800',
+          更新: 'bg-amber-100 text-amber-800',
+          删除: 'bg-red-100 text-red-800',
+          登录: 'bg-green-100 text-green-800',
+          登出: 'bg-green-100 text-green-800',
+          发送: 'bg-indigo-100 text-indigo-800',
+          导入: 'bg-purple-100 text-purple-800',
+          导出: 'bg-purple-100 text-purple-800',
         }
 
-        const { text, color } = operationMap[operation] || { text: operation, color: 'bg-gray-100 text-gray-800' }
-        return <Badge variant="outline" className={color}>{text}</Badge>
+        const color = colorMap[operation] || 'bg-gray-100 text-gray-800'
+        return <Badge variant="outline" className={color}>{operation}</Badge>
       },
       enableColumnFilter: true,
       meta: {
@@ -471,17 +211,26 @@ function LogsPage() {
       },
     },
     {
-      id: 'message',
-      accessorKey: 'message',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="消息" />,
+      id: 'event',
+      accessorKey: 'event',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="事件内容" />,
+      cell: ({ row }) => {
+        const event = row.original.event
+        // 截取一部分显示
+        return (
+          <span className="truncate max-w-[200px] block" title={event}>
+            {event.length > 50 ? `${event.substring(0, 50)}...` : event}
+          </span>
+        )
+      },
       enableColumnFilter: true,
       meta: {
-        label: '消息',
+        label: '事件内容',
       },
     },
     {
-      id: 'user',
-      accessorKey: 'user.name',
+      id: 'username',
+      accessorKey: 'username',
       header: ({ column }) => <DataTableColumnHeader column={column} title="操作人" />,
       enableColumnFilter: true,
       meta: {
@@ -518,18 +267,18 @@ function LogsPage() {
 
   // 格式化日期显示
   const formatDateRange = () => {
-    if (!dateRange.from && !dateRange.to)
+    if (!dateRange?.from && !dateRange?.to)
       return '选择日期'
 
     let displayText = ''
-    if (dateRange.from) {
+    if (dateRange?.from) {
       displayText += format(dateRange.from, 'yyyy-MM-dd', { locale: zhCN })
     }
 
-    if (dateRange.to) {
+    if (dateRange?.to) {
       displayText += ` 至 ${format(dateRange.to, 'yyyy-MM-dd', { locale: zhCN })}`
     }
-    else if (dateRange.from) {
+    else if (dateRange?.from) {
       displayText += ' 起'
     }
 
@@ -540,108 +289,106 @@ function LogsPage() {
   const { table } = useDataTable({
     data: filteredLogs,
     columns,
-    pageCount: 1,
-    getRowId: row => row.id,
+    pageCount,
+    getRowId: row => row.eventid.toString(),
     initialState: {
-      pagination: { pageSize: 10, pageIndex: 0 },
+      pagination,
     },
+    onPaginationChange: setPagination,
   })
+
+  // 双击行打开详情
+  const handleRowDoubleClick = useCallback((row: EventLog) => {
+    showLogDetail(row)
+  }, [showLogDetail])
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">系统日志</h2>
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleExportLogs}>
           <Download className="mr-2 h-4 w-4" />
           导出日志
         </Button>
       </div>
 
-      <div className="flex flex-wrap justify-between items-center py-4 gap-2">
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="搜索日志..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-8 w-64"
-            />
+      {isLoading && !data ? (
+        <div className="py-8 text-center">加载中...</div>
+      ) : (
+        <>
+          <div className="flex flex-wrap justify-between items-center py-4 gap-2">
+            <div className="flex flex-wrap gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索日志..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="pl-8 w-64"
+                />
+              </div>
+
+              <Select
+                value={moduleFilter}
+                onValueChange={setModuleFilter}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="所有模块" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">所有模块</SelectItem>
+                  {moduleOptions.map(module => (
+                    <SelectItem key={module} value={module}>
+                      {module}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
+                    <Filter className="mr-2 h-4 w-4" />
+                    {formatDateRange()}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    locale={zhCN}
+                    className="rounded-md border"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {(searchTerm || moduleFilter !== 'all' || dateRange?.from || dateRange?.to) && (
+                <Button variant="ghost" size="icon" onClick={resetFilters}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              共
+              {' '}
+              {totalLogs}
+              {' '}
+              条日志，当前显示
+              {' '}
+              {filteredLogs.length}
+              {' '}
+              条
+            </div>
           </div>
 
-          <Select
-            value={levelFilter}
-            onValueChange={setLevelFilter}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="所有级别" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有级别</SelectItem>
-              <SelectItem value="info">信息</SelectItem>
-              <SelectItem value="warning">警告</SelectItem>
-              <SelectItem value="error">错误</SelectItem>
-              <SelectItem value="critical">严重</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={operationFilter}
-            onValueChange={setOperationFilter}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="所有操作" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有操作</SelectItem>
-              <SelectItem value="login">登录</SelectItem>
-              <SelectItem value="logout">登出</SelectItem>
-              <SelectItem value="create">创建</SelectItem>
-              <SelectItem value="update">更新</SelectItem>
-              <SelectItem value="delete">删除</SelectItem>
-              <SelectItem value="export">导出</SelectItem>
-              <SelectItem value="import">导入</SelectItem>
-              <SelectItem value="view">查看</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
-                <Filter className="mr-2 h-4 w-4" />
-                {formatDateRange()}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange}
-                locale={zhCN}
-                className="rounded-md border"
-              />
-            </PopoverContent>
-          </Popover>
-
-          {(searchTerm || levelFilter !== 'all' || operationFilter !== 'all' || dateRange.from || dateRange.to) && (
-            <Button variant="ghost" size="icon" onClick={resetFilters}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-
-        <div className="text-sm text-muted-foreground">
-          共
-          {' '}
-          {filteredLogs.length}
-          {' '}
-          条日志
-        </div>
-      </div>
-
-      <DataTable
-        table={table}
-      />
+          <DataTable
+            table={table}
+            onRowDoubleClick={handleRowDoubleClick}
+          />
+        </>
+      )}
     </div>
   )
 }
