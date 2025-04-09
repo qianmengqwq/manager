@@ -17,6 +17,7 @@ import { flexRender } from '@tanstack/react-table'
 interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>
   actionBar?: React.ReactNode
+  onRowDoubleClick?: (row: TData) => void
 }
 
 export function DataTable<TData>({
@@ -24,6 +25,7 @@ export function DataTable<TData>({
   actionBar,
   children,
   className,
+  onRowDoubleClick,
   ...props
 }: DataTableProps<TData>) {
   return (
@@ -63,6 +65,8 @@ export function DataTable<TData>({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && 'selected'}
+                      onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row.original) : undefined}
+                      className={onRowDoubleClick ? 'cursor-pointer hover:bg-muted/50' : undefined}
                     >
                       {row.getVisibleCells().map(cell => (
                         <TableCell
@@ -86,7 +90,7 @@ export function DataTable<TData>({
                       colSpan={table.getAllColumns().length}
                       className="h-24 text-center"
                     >
-                      No results.
+                      没有结果
                     </TableCell>
                   </TableRow>
                 )}
