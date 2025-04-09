@@ -5,6 +5,7 @@ import { useUserStore } from '@/store/user'
 import { useModalStack } from 'rc-modal-sheet'
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { mutate } from 'swr'
 import { DeleteConfirm } from './DeleteConfirm'
 import { SecondaryVerifyForm } from './SecondaryVerifyForm'
 import { UserDetail } from './UserDetail'
@@ -176,10 +177,9 @@ export function useAddUserModal() {
                 toast.success('添加用户成功')
                 props.dismiss()
                 // 添加成功后刷新列表
-                window.location.reload()
+                await mutate('userList')
               }
               catch (error) {
-                console.error('添加用户错误:', error)
                 setIsSubmitting(false)
                 if (error instanceof Error) {
                   toast.error(error.message)
@@ -265,7 +265,7 @@ export function useEditUserModal() {
                 toast.success('更新用户成功')
                 props.dismiss()
                 // 更新成功后刷新列表
-                window.location.reload()
+                await mutate('userList')
               }
               catch (error) {
                 setIsSubmitting(false)
@@ -320,7 +320,7 @@ export function useEditUserModal() {
   }, [present, showVerifyModal])
 }
 
-// 删除用户确认模态框
+// 删除用户模态框
 export function useDeleteUserModal() {
   const { present } = useModalStack()
   const showVerifyModal = useSecondaryVerifyModal()
@@ -329,22 +329,22 @@ export function useDeleteUserModal() {
     present({
       title: '删除用户',
       content: (props) => {
-        const [isDeleting, setIsDeleting] = useState(false)
+        const [isSubmitting, setIsSubmitting] = useState(false)
 
         const handleDelete = async () => {
-          setIsDeleting(true)
+          setIsSubmitting(true)
           try {
             // 删除用户操作封装，会在二级验证成功后执行
             const performDeleteUser = async () => {
               try {
                 await deleteUser(user.userid)
-                toast.success(`用户"${user.username}"已删除`)
+                toast.success('删除用户成功')
                 props.dismiss()
                 // 删除成功后刷新列表
-                window.location.reload()
+                await mutate('userList')
               }
               catch (error) {
-                setIsDeleting(false)
+                setIsSubmitting(false)
                 if (error instanceof Error) {
                   toast.error(error.message)
                 }
@@ -360,8 +360,6 @@ export function useDeleteUserModal() {
               await performDeleteUser()
             }
             catch (error) {
-              console.error('删除用户错误:', error)
-
               // 检查是否需要二级验证
               const errorMessage = error instanceof Error ? error.message : '未知错误'
               if (errorMessage.includes('二级验证') || (error as any)?.code === 1001) {
@@ -372,16 +370,16 @@ export function useDeleteUserModal() {
             }
           }
           finally {
-            setIsDeleting(false)
+            setIsSubmitting(false)
           }
         }
 
         return (
           <DeleteConfirm
-            user={user}
-            onDelete={handleDelete}
+            onConfirm={handleDelete}
             onCancel={props.dismiss}
-            isDeleting={isDeleting}
+            isSubmitting={isSubmitting}
+            username={user.username}
           />
         )
       },

@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/types/api'
 import type { UserFromResponse } from '@/types/user'
-import type { UserFormValues, UserListResult } from './userType'
+import type { UserFormValues } from './userType'
 import { checkVerifyExpired, useUserStore } from '@/store/user'
 
 // 获取用户列表
@@ -80,7 +80,7 @@ export async function addUser(userData: UserFormValues) {
 
 // 更新用户
 export async function updateUser(userData: UserFormValues) {
-  const response = await fetch(`/api/user/update`, {
+  const response = await fetch(`/api/user/updateuser`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

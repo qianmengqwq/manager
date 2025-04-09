@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 // 用户表单验证schema
 export const userFormSchema = z.object({
-  userid: z.number().nullable(),
+  userid: z.number().optional(),
   username: z.string().min(2, '用户名至少需要2个字符'),
   account: z.string().min(2, '账号至少需要2个字符'),
   password: z.string().min(6, '密码至少需要6个字符'),

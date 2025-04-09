@@ -29,7 +29,7 @@ export function UserForm({
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
-      userid: user?.userid ?? null,
+      userid: user?.userid ?? undefined,
       username: user?.username ?? '',
       account: user?.account ?? '',
       password: user?.password ?? '',
