@@ -194,3 +194,28 @@ export function isSecondaryVerifyRequired(error: unknown): boolean {
 
   return false
 }
+
+// 登出用户
+export async function logoutUser(userId: number, userLevel: number) {
+  try {
+    const response = await fetch('/api/user/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userid: userId,
+        level: userLevel,
+      }),
+    })
+
+    const data = await response.json()
+
+    // 无论接口是否成功，都返回结果
+    return data
+  }
+  catch (error) {
+    console.error('登出请求失败:', error)
+    throw error
+  }
+}

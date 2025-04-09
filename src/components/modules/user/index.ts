@@ -6,6 +6,7 @@ export { UserDetail } from './UserDetail'
 
 // 组件
 export { UserForm } from './UserForm'
+export { UserMenu } from './UserMenu'
 // 模态框
 export * from './UserModals'
 // 用户服务
