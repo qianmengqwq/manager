@@ -27,6 +27,7 @@ export interface MajorFilter {
 export interface AddMajorParams {
   majorname: string
   collegeid: number
+  collegename: string
 }
 
 // 更新专业请求参数
@@ -34,4 +35,5 @@ export interface UpdateMajorParams {
   majorid: number
   majorname: string
   collegeid: number
+  collegename?: string
 } 

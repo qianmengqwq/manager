@@ -68,7 +68,7 @@ export function DashboardLayout() {
           <div className="pt-4">
             <div className="text-sm font-medium text-muted-foreground mb-2">院系管理</div>
             <NavItem
-              href="/dashboard/departments"
+              href="/dashboard/college"
               title="院系管理"
               icon={<Building2 className="h-5 w-5" />}
               isChild

@@ -45,7 +45,7 @@ export async function fetchColleges(collegename: string = '') {
 // 添加学院
 export async function addCollege(params: AddCollegeParams) {
   try {
-    const response = await fetch(`/api/college/add`, {
+    const response = await fetch(`/api/college/addcollege`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

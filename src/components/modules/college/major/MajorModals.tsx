@@ -1,23 +1,24 @@
-import { useModalStack } from 'rc-modal-sheet'
-import { useCallback } from 'react'
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useForm } from 'react-hook-form'
-import { toast } from 'react-hot-toast'
-import { addMajor, updateMajor, deleteMajor } from './MajorService'
 import type { College } from '../collegeType'
 import type { Major } from './majorType'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useModalStack } from 'rc-modal-sheet'
+import { useCallback, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'react-hot-toast'
+import { mutate } from 'swr'
 import { z } from 'zod'
+import { addMajor, deleteMajor } from './MajorService'
 
 // 表单验证Schema
 const majorFormSchema = z.object({
@@ -27,58 +28,54 @@ const majorFormSchema = z.object({
 
 type MajorFormValues = z.infer<typeof majorFormSchema>
 
-// 添加/编辑专业模态框
-export function useMajorFormModal(
-  onSuccess: () => void, 
-  colleges: College[],
-  editData?: {
-    majorid: number
-    majorname: string
-    collegeid: number
-  }
-) {
+// 添加专业模态框
+export function useAddMajorModal(collegeList: College[]) {
   const { present } = useModalStack()
-  const isEdit = Boolean(editData)
 
-  return useCallback(() => {
+  return useCallback((preSelectedCollegeId?: number) => {
     present({
-      title: isEdit ? '编辑专业' : '添加专业',
-      content: () => {
-        // 默认值
-        const defaultValues: MajorFormValues = {
-          majorname: editData?.majorname || '',
-          collegeid: editData?.collegeid ? String(editData.collegeid) : '',
-        }
+      title: '添加专业',
+      content: (props) => {
+        const [isSubmitting, setIsSubmitting] = useState(false)
 
         // 初始化表单
         const form = useForm<MajorFormValues>({
           resolver: zodResolver(majorFormSchema),
-          defaultValues,
+          defaultValues: {
+            majorname: '',
+            collegeid: preSelectedCollegeId ? String(preSelectedCollegeId) : '',
+          },
         })
 
         // 提交表单
         const onSubmit = async (data: MajorFormValues) => {
+          setIsSubmitting(true)
           try {
-            const collegeid = parseInt(data.collegeid)
-            
-            if (isEdit && editData) {
-              await updateMajor({
-                majorid: editData.majorid,
-                majorname: data.majorname,
-                collegeid,
-              })
-              toast.success('专业更新成功')
-            } else {
-              await addMajor({
-                majorname: data.majorname,
-                collegeid,
-              })
-              toast.success('专业添加成功')
+            const collegeid = Number.parseInt(data.collegeid)
+            // 获取选中学院的名称
+            const selectedCollege = collegeList.find(college => college.collegeid === collegeid)
+            if (!selectedCollege) {
+              toast.error('无法获取所选学院信息')
+              return
             }
-            onSuccess()
-          } catch (error) {
+
+            await addMajor({
+              majorname: data.majorname,
+              collegeid,
+              collegename: selectedCollege.collegename,
+            })
+            toast.success('专业添加成功')
+            props.dismiss()
+            // 刷新数据
+            mutate('majors')
+            mutate('colleges')
+          }
+          catch (error) {
             console.error({ majorFormError: error })
             toast.error(error instanceof Error ? error.message : '操作失败')
+          }
+          finally {
+            setIsSubmitting(false)
           }
         }
 
@@ -95,6 +92,7 @@ export function useMajorFormModal(
                       <Input
                         placeholder="请输入专业名称"
                         {...field}
+                        disabled={isSubmitting}
                       />
                     </FormControl>
                     <FormMessage />
@@ -111,6 +109,7 @@ export function useMajorFormModal(
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={isSubmitting}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -118,9 +117,9 @@ export function useMajorFormModal(
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {colleges.map((college) => (
-                          <SelectItem 
-                            key={college.collegeid} 
+                        {collegeList.map(college => (
+                          <SelectItem
+                            key={college.collegeid}
                             value={college.collegeid.toString()}
                           >
                             {college.collegename}
@@ -137,12 +136,13 @@ export function useMajorFormModal(
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => form.reset()}
+                  onClick={props.dismiss}
+                  disabled={isSubmitting}
                 >
-                  重置
+                  取消
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? '提交中...' : '确认'}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? '提交中...' : '确认'}
                 </Button>
               </div>
             </form>
@@ -150,29 +150,35 @@ export function useMajorFormModal(
         )
       },
     })
-  }, [present, isEdit, editData, colleges, onSuccess])
+  }, [present, collegeList])
 }
 
 // 删除确认模态框 - 专业
-export function useDeleteMajorModal(
-  majorId: number,
-  majorName: string,
-  onSuccess: () => void
-) {
+export function useDeleteMajorModal() {
   const { present } = useModalStack()
 
-  return useCallback(() => {
+  return useCallback((major: Major) => {
     present({
       title: '删除专业',
-      content: () => {
+      content: (props) => {
+        const [isSubmitting, setIsSubmitting] = useState(false)
+
         const handleDelete = async () => {
+          setIsSubmitting(true)
           try {
-            await deleteMajor(majorId)
+            await deleteMajor(major.majorid)
             toast.success('专业删除成功')
-            onSuccess()
-          } catch (error) {
+            props.dismiss()
+            // 刷新数据
+            mutate('majors')
+            mutate('colleges')
+          }
+          catch (error) {
             console.error({ deleteMajorError: error })
             toast.error(error instanceof Error ? error.message : '删除失败')
+          }
+          finally {
+            setIsSubmitting(false)
           }
         }
 
@@ -181,21 +187,29 @@ export function useDeleteMajorModal(
             <p className="text-center">
               确定要删除
               <span className="font-medium text-destructive mx-1">
-                {majorName}
+                {major.majorname}
               </span>
               专业吗？此操作不可恢复。
             </p>
             <div className="flex justify-center space-x-4">
-              <Button variant="outline" onClick={() => window.rcModalSheet.dismiss()}>
+              <Button
+                variant="outline"
+                onClick={props.dismiss}
+                disabled={isSubmitting}
+              >
                 取消
               </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                确认删除
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? '删除中...' : '确认删除'}
               </Button>
             </div>
           </div>
         )
       },
     })
-  }, [present, majorId, majorName, onSuccess])
-} 
+  }, [present])
+}

@@ -1,25 +1,26 @@
-import { useModalStack } from 'rc-modal-sheet'
-import { useCallback } from 'react'
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import type { College } from './collegeType'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useModalStack } from 'rc-modal-sheet'
+import { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
-import { 
-  addCollege, 
-  updateCollege,
-  deleteCollege,
-} from './CollegeService'
-import type { College } from './collegeType'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { mutate } from 'swr'
 import { z } from 'zod'
+import {
+  addCollege,
+  deleteCollege,
+  updateCollege,
+} from './CollegeService'
 
 // 表单验证Schema
 const collegeFormSchema = z.object({
@@ -28,48 +29,42 @@ const collegeFormSchema = z.object({
 
 type CollegeFormValues = z.infer<typeof collegeFormSchema>
 
-// 添加/编辑学院模态框
-export function useCollegeFormModal(
-  onSuccess: () => void, 
-  editData?: College
-) {
+// 添加学院模态框
+export function useAddCollegeModal() {
   const { present } = useModalStack()
-  const isEdit = Boolean(editData)
 
   return useCallback(() => {
     present({
-      title: isEdit ? '编辑学院' : '添加学院',
-      content: () => {
-        // 默认值
-        const defaultValues: CollegeFormValues = {
-          collegename: editData?.collegename || '',
-        }
+      title: '添加学院',
+      content: (props) => {
+        const [isSubmitting, setIsSubmitting] = useState(false)
 
         // 初始化表单
         const form = useForm<CollegeFormValues>({
           resolver: zodResolver(collegeFormSchema),
-          defaultValues,
+          defaultValues: {
+            collegename: '',
+          },
         })
 
         // 提交表单
         const onSubmit = async (data: CollegeFormValues) => {
+          setIsSubmitting(true)
           try {
-            if (isEdit && editData) {
-              await updateCollege({
-                collegeid: editData.collegeid,
-                collegename: data.collegename,
-              })
-              toast.success('学院更新成功')
-            } else {
-              await addCollege({
-                collegename: data.collegename,
-              })
-              toast.success('学院添加成功')
-            }
-            onSuccess()
-          } catch (error) {
+            await addCollege({
+              collegename: data.collegename,
+            })
+            toast.success('学院添加成功')
+            props.dismiss()
+            // 刷新数据
+            mutate('colleges')
+          }
+          catch (error) {
             console.error({ collegeFormError: error })
             toast.error(error instanceof Error ? error.message : '操作失败')
+          }
+          finally {
+            setIsSubmitting(false)
           }
         }
 
@@ -86,6 +81,7 @@ export function useCollegeFormModal(
                       <Input
                         placeholder="请输入学院名称"
                         {...field}
+                        disabled={isSubmitting}
                       />
                     </FormControl>
                     <FormMessage />
@@ -97,12 +93,13 @@ export function useCollegeFormModal(
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => form.reset()}
+                  onClick={props.dismiss}
+                  disabled={isSubmitting}
                 >
-                  重置
+                  取消
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? '提交中...' : '确认'}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? '提交中...' : '确认'}
                 </Button>
               </div>
             </form>
@@ -110,29 +107,34 @@ export function useCollegeFormModal(
         )
       },
     })
-  }, [present, isEdit, editData, onSuccess])
+  }, [present])
 }
 
 // 删除确认模态框 - 学院
-export function useDeleteCollegeModal(
-  collegeId: number,
-  collegeName: string,
-  onSuccess: () => void
-) {
+export function useDeleteCollegeModal() {
   const { present } = useModalStack()
 
-  return useCallback(() => {
+  return useCallback((college: College) => {
     present({
       title: '删除学院',
-      content: () => {
+      content: (props) => {
+        const [isSubmitting, setIsSubmitting] = useState(false)
+
         const handleDelete = async () => {
+          setIsSubmitting(true)
           try {
-            await deleteCollege(collegeId)
+            await deleteCollege(college.collegeid)
             toast.success('学院删除成功')
-            onSuccess()
-          } catch (error) {
+            props.dismiss()
+            // 刷新数据
+            mutate('colleges')
+          }
+          catch (error) {
             console.error({ deleteCollegeError: error })
             toast.error(error instanceof Error ? error.message : '删除失败')
+          }
+          finally {
+            setIsSubmitting(false)
           }
         }
 
@@ -141,21 +143,29 @@ export function useDeleteCollegeModal(
             <p className="text-center">
               确定要删除
               <span className="font-medium text-destructive mx-1">
-                {collegeName}
+                {college.collegename}
               </span>
               学院吗？此操作不可恢复，该学院下的所有专业也将被删除。
             </p>
             <div className="flex justify-center space-x-4">
-              <Button variant="outline" onClick={() => window.rcModalSheet.dismiss()}>
+              <Button
+                variant="outline"
+                onClick={props.dismiss}
+                disabled={isSubmitting}
+              >
                 取消
               </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                确认删除
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? '删除中...' : '确认删除'}
               </Button>
             </div>
           </div>
         )
       },
     })
-  }, [present, collegeId, collegeName, onSuccess])
-} 
+  }, [present])
+}
