@@ -3,6 +3,7 @@ import type { Activity } from './activityType'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Archive, CheckCircle, Edit, Eye, ReplyAll, Trash2, XCircle } from 'lucide-react'
@@ -11,7 +12,6 @@ import { getStatusColor, getStatusText } from './activityType'
 
 interface UseColumnsProps {
   showActivityDetail: (activity: Activity) => void
-  showEditActivity: (activity: Activity) => void
   showArchiveActivity: (activity: Activity) => void
   showDeleteActivity: (activity: Activity) => void
   showApproveActivity: (activity: Activity) => void
@@ -21,13 +21,14 @@ interface UseColumnsProps {
 
 export function useColumns({
   showActivityDetail,
-  showEditActivity,
   showArchiveActivity,
   showDeleteActivity,
   showApproveActivity,
   showRejectActivity,
   showWithdrawActivity,
 }: UseColumnsProps) {
+  const navigate = useNavigate()
+
   return useMemo<ColumnDef<Activity>[]>(() => [
     {
       id: 'activityname',
@@ -148,6 +149,15 @@ export function useColumns({
         const isRejected = activity.status === 1
         const isPublished = activity.status === 2
 
+        // 跳转到编辑页面
+        const goToEdit = (e: React.MouseEvent) => {
+          e.stopPropagation()
+          // 使用TanStack Router的导航方式
+          navigate({
+            to: `/dashboard/activities/${activity.activityid}`,
+          })
+        }
+
         return (
           <div className="flex items-center gap-2">
             <Button
@@ -166,10 +176,7 @@ export function useColumns({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  showEditActivity(activity)
-                }}
+                onClick={goToEdit}
               >
                 <Edit className="h-4 w-4 mr-1" />
                 编辑
@@ -253,5 +260,5 @@ export function useColumns({
         )
       },
     },
-  ], [showActivityDetail, showEditActivity, showArchiveActivity, showDeleteActivity, showApproveActivity, showRejectActivity, showWithdrawActivity])
+  ], [showActivityDetail, showArchiveActivity, showDeleteActivity, showApproveActivity, showRejectActivity, showWithdrawActivity, navigate])
 }

@@ -46,19 +46,33 @@ export async function fetchActivities(
       throw new Error('获取活动列表失败')
     }
 
-    const data = await response.json() as ApiResponse<ActivityListResult>
+    const data = await response.json() as ApiResponse<any>
     console.log('活动数据响应:', data)
 
     if (data.code !== 1000) {
       throw new Error(data.msg || '获取活动列表失败')
     }
 
-    return {
-      data: data.result.rows,
-      total: data.result.total || 0,
-      pageTotal: data.result.pageTotal || 0,
-      page,
-      pageSize,
+    // 判断返回的数据结构
+    if (Array.isArray(data.result)) {
+      // 如果result直接是一个数组，使用这个数组作为数据源
+      return {
+        data: data.result,
+        total: data.result.length,
+        pageTotal: Math.ceil(data.result.length / pageSize) || 1,
+        page,
+        pageSize,
+      }
+    }
+    else {
+      // 原来的逻辑，当result包含rows字段时
+      return {
+        data: data.result.rows,
+        total: data.result.total || 0,
+        pageTotal: data.result.pageTotal || 0,
+        page,
+        pageSize,
+      }
     }
   }
   catch (error) {

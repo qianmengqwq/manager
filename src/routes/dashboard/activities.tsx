@@ -2,14 +2,13 @@ import { DataTable } from '@/components/data-table/data-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useDataTable } from '@/hooks/use-data-table'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router'
 import { PlusCircle, Search } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useColumns } from '@/components/modules/activity/columns'
 import { 
   useActivityDetailModal, 
   useCreateActivityModal, 
-  useEditActivityModal,
   useArchiveActivityModal,
   useDeleteActivityModal,
   useApproveActivityModal,
@@ -21,6 +20,23 @@ import useSWR from 'swr'
 import type { Activity } from '@/components/modules/activity/activityType'
 
 function ActivitiesPage() {
+  // 检查是否有子路由激活
+  const matches = useMatches()
+  const isDetailRouteActive = matches.some(
+    match => match.routeId.includes('$activityId')
+  )
+
+  // 如果子路由激活，则渲染子路由内容
+  if (isDetailRouteActive) {
+    return <Outlet />
+  }
+
+  // 否则渲染活动列表
+  return <ActivitiesList />
+}
+
+// 原本的活动列表组件
+function ActivitiesList() {
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1) 
   const [pageSize, setPageSize] = useState(10)
@@ -51,7 +67,6 @@ function ActivitiesPage() {
   // 初始化各种模态框
   const showActivityDetail = useActivityDetailModal()
   const showCreateActivity = useCreateActivityModal()
-  const showEditActivity = useEditActivityModal()
   const showArchiveActivity = useArchiveActivityModal()
   const showDeleteActivity = useDeleteActivityModal()
   const showApproveActivity = useApproveActivityModal()
@@ -67,11 +82,6 @@ function ActivitiesPage() {
   const onCreateActivity = useCallback(() => {
     showCreateActivity(onDataChange)
   }, [showCreateActivity, onDataChange])
-
-  // 编辑活动按钮回调
-  const onEditActivity = useCallback((activity: Activity) => {
-    showEditActivity(activity, onDataChange)
-  }, [showEditActivity, onDataChange])
 
   // 归档活动按钮回调
   const onArchiveActivity = useCallback((activity: Activity) => {
@@ -101,7 +111,6 @@ function ActivitiesPage() {
   // 定义表格列
   const columns = useColumns({
     showActivityDetail,
-    showEditActivity: onEditActivity,
     showArchiveActivity: onArchiveActivity,
     showDeleteActivity: onDeleteActivity,
     showApproveActivity: onApproveActivity,
