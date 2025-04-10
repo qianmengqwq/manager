@@ -1,17 +1,10 @@
 import type { EventLog } from '@/components/modules/logs/logType'
-import type { DateRange } from 'react-day-picker'
 import { DataTable } from '@/components/data-table/data-table'
 import { useColumns } from '@/components/modules/logs/columns'
 import { useLogDetailModal } from '@/components/modules/logs/LogModals'
 import { exportEventLogs, fetchEventLogs } from '@/components/modules/logs/LogService'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -21,9 +14,7 @@ import {
 } from '@/components/ui/select'
 import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute } from '@tanstack/react-router'
-import { format, parseISO } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
-import { Download, Filter, Search, X } from 'lucide-react'
+import { Download, Search, X } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import toast from 'react-hot-toast'
@@ -34,7 +25,6 @@ function LogsPage() {
   const [username, setUsername] = useState('')
   const [moduleFilter, setModuleFilter] = useState<string>('all')
   const [levelFilter, setLevelFilter] = useState<number>(0)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
 
   const showLogDetail = useLogDetailModal()
 
@@ -54,8 +44,6 @@ function LogsPage() {
       module?: string
       username?: string
       level?: number
-      dateFrom?: string
-      dateTo?: string
     } = {}
 
     if (moduleFilter && moduleFilter !== 'all')
@@ -65,16 +53,8 @@ function LogsPage() {
     if (levelFilter > 0)
       filterParams.level = levelFilter
 
-    if (dateRange?.from) {
-      filterParams.dateFrom = format(dateRange.from, 'yyyy-MM-dd')
-    }
-
-    if (dateRange?.to) {
-      filterParams.dateTo = format(dateRange.to, 'yyyy-MM-dd')
-    }
-
     return filterParams
-  }, [moduleFilter, username, levelFilter, dateRange])
+  }, [moduleFilter, username, levelFilter])
 
   // 获取日志列表数据
   const { data, error, isLoading, mutate } = useSWR(
@@ -112,7 +92,6 @@ function LogsPage() {
     setUsername('')
     setModuleFilter('all')
     setLevelFilter(0)
-    setDateRange(undefined)
     // 重置后刷新数据
     mutate()
   }
@@ -131,26 +110,6 @@ function LogsPage() {
 
   // 定义表格列
   const columns = useColumns({ showLogDetail })
-
-  // 格式化日期显示
-  const formatDateRange = () => {
-    if (!dateRange?.from && !dateRange?.to)
-      return '选择日期'
-
-    let displayText = ''
-    if (dateRange?.from) {
-      displayText += format(dateRange.from, 'yyyy-MM-dd', { locale: zhCN })
-    }
-
-    if (dateRange?.to) {
-      displayText += ` 至 ${format(dateRange.to, 'yyyy-MM-dd', { locale: zhCN })}`
-    }
-    else if (dateRange?.from) {
-      displayText += ' 起'
-    }
-
-    return displayText
-  }
 
   // 初始化表格
   const { table } = useDataTable({
@@ -260,32 +219,7 @@ function LogsPage() {
                 </SelectContent>
               </Select>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
-                    <Filter className="mr-2 h-4 w-4" />
-                    {formatDateRange()}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={(range) => {
-                      setDateRange(range)
-                      if (range?.from || range?.to) {
-                        startTransition(() => {
-                          handleFilterChange()
-                        })
-                      }
-                    }}
-                    locale={zhCN}
-                    className="rounded-md border"
-                  />
-                </PopoverContent>
-              </Popover>
-
-              {(username || moduleFilter !== 'all' || levelFilter > 0 || dateRange?.from || dateRange?.to) && (
+              {(username || moduleFilter !== 'all' || levelFilter > 0) && (
                 <Button variant="ghost" size="icon" onClick={resetFilters}>
                   <X className="h-4 w-4" />
                 </Button>
