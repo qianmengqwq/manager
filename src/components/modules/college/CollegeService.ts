@@ -71,44 +71,11 @@ export async function addCollege(params: AddCollegeParams) {
   }
 }
 
-// 更新学院
-export async function updateCollege(params: UpdateCollegeParams) {
-  try {
-    const response = await fetch(`/api/college/update`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
-    })
-
-    if (!response.ok) {
-      throw new Error('更新学院失败')
-    }
-
-    const data = await response.json() as ApiResponse<any>
-
-    if (data.code !== 1000) {
-      throw new Error(data.msg || '更新学院失败')
-    }
-
-    return data.result
-  }
-  catch (error) {
-    console.error({ updateCollegeError: error })
-    throw error
-  }
-}
-
 // 删除学院
 export async function deleteCollege(collegeid: number) {
   try {
-    const response = await fetch(`/api/college/delete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ collegeid }),
+    const response = await fetch(`/api/college/delcollege?collegeid=${collegeid}`, {
+      method: 'GET',
     })
 
     if (!response.ok) {

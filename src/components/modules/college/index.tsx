@@ -4,8 +4,8 @@ import { useAddCollegeModal, useDeleteCollegeModal } from './CollegeModals'
 import { fetchColleges } from './CollegeService'
 
 export {
-  fetchColleges,
   type College,
+  fetchColleges,
   useAddCollegeModal,
   useDeleteCollegeModal,
 }

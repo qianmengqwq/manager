@@ -1,4 +1,3 @@
-import type { College } from './collegeType'
 import type { Major } from './major'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,12 +15,11 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   GraduationCap,
-  PencilIcon,
   PlusIcon,
   SearchIcon,
   TrashIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import useSWR from 'swr'
 import { useAddCollegeModal, useDeleteCollegeModal } from './CollegeModals'
@@ -114,15 +112,8 @@ export default function CollegeManager() {
     )
   }
 
-  // 搜索内容变化时展开所有学院
-  useEffect(() => {
-    if (searchTerm) {
-      setExpandedColleges(colleges.map(c => c.collegeid))
-    }
-  }, [searchTerm, colleges])
-
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
+    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 flex flex-col h-full">
       {/* 页面标题和操作栏 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div className="flex items-center gap-3">
@@ -177,128 +168,132 @@ export default function CollegeManager() {
           )}
         </div>
       ) : (
-        // 内容区域
-        <div className="grid gap-6">
-          {filteredColleges.map((college) => {
-            const majors = majorsByCollege[college.collegeid] || []
-            const isExpanded = expandedColleges.includes(college.collegeid)
+        // 内容区域 - 添加最大高度和滚动功能
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="overflow-y-auto pr-2 pb-4 max-h-[800px]">
+            <div className="grid gap-6">
+              {filteredColleges.map((college) => {
+                const majors = majorsByCollege[college.collegeid] || []
+                const isExpanded = expandedColleges.includes(college.collegeid)
 
-            return (
-              <Card
-                key={college.collegeid}
-                className={cn(
-                  'overflow-hidden transition-all duration-200 border shadow-sm hover:shadow-md',
-                  isExpanded && 'shadow-md',
-                )}
-              >
-                <CardHeader className="px-6 py-5">
-                  <div className="flex justify-between items-center gap-4">
-                    <div
-                      className="flex items-center gap-3 cursor-pointer group"
-                      onClick={() => toggleCollegeExpand(college.collegeid)}
-                    >
-                      <div
-                        className={cn(
-                          'flex items-center justify-center h-9 w-9 rounded-full transition-colors',
-                          'bg-primary/5 group-hover:bg-primary/10',
-                        )}
-                      >
-                        {isExpanded
-                          ? <ChevronDownIcon className="h-5 w-5 text-primary transition-transform duration-200" />
-                          : <ChevronRightIcon className="h-5 w-5 text-primary transition-transform duration-200" />}
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg group-hover:text-primary/90 transition-colors">
-                          {college.collegename}
-                        </CardTitle>
-                        <CardDescription className="mt-0.5">
-                          {majors.length
-                            ? `${majors.length} 个专业`
-                            : '暂无专业'}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 text-sm font-medium"
-                        onClick={() => showAddMajorModal(college.collegeid)}
-                      >
-                        <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
-                        添加专业
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 w-9 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                        onClick={() => showDeleteCollegeModal(college)}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                        <span className="sr-only">删除学院</span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <div
-                  className={cn(
-                    'transition-all duration-300 ease-in-out',
-                    isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
-                  )}
-                >
-                  <Separator />
-                  <CardContent className="p-6 pt-5">
-                    {majors.length === 0 ? (
-                      <div className="text-center py-8 px-4">
-                        <BookOpen className="h-10 w-10 mx-auto text-muted-foreground opacity-40 mb-3" />
-                        <p className="text-muted-foreground mb-4">
-                          该学院暂无专业信息
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => showAddMajorModal(college.collegeid)}
-                        >
-                          <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
-                          添加专业
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="grid gap-3">
-                        {majors.map(major => (
-                          <div
-                            key={major.majorid}
-                            className="flex justify-between items-center px-4 py-3.5 rounded-md bg-accent/30 hover:bg-accent/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="bg-primary/10 h-8 w-8 rounded-full flex items-center justify-center">
-                                <BookOpen className="h-4 w-4 text-primary" />
-                              </div>
-                              <span className="font-medium">
-                                {major.majorname}
-                              </span>
-                            </div>
-                            <div className="flex gap-1.5">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                onClick={() => showDeleteMajorModal(major)}
-                              >
-                                <TrashIcon className="h-3.5 w-3.5" />
-                                <span className="sr-only">删除专业</span>
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                return (
+                  <Card
+                    key={college.collegeid}
+                    className={cn(
+                      'overflow-hidden transition-all duration-200 border shadow-sm hover:shadow-md py-0 gap-0',
+                      isExpanded && 'shadow-md',
                     )}
-                  </CardContent>
-                </div>
-              </Card>
-            )
-          })}
+                  >
+                    <CardHeader className="px-6 py-5">
+                      <div className="flex justify-between items-center gap-4">
+                        <div
+                          className="flex items-center gap-3 cursor-pointer group"
+                          onClick={() => toggleCollegeExpand(college.collegeid)}
+                        >
+                          <div
+                            className={cn(
+                              'flex items-center justify-center h-9 w-9 rounded-full transition-colors',
+                              'bg-primary/5 group-hover:bg-primary/10',
+                            )}
+                          >
+                            {isExpanded
+                              ? <ChevronDownIcon className="h-5 w-5 text-primary transition-transform duration-200" />
+                              : <ChevronRightIcon className="h-5 w-5 text-primary transition-transform duration-200" />}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg group-hover:text-primary/90 transition-colors">
+                              {college.collegename}
+                            </CardTitle>
+                            <CardDescription className="mt-0.5">
+                              {majors.length
+                                ? `${majors.length} 个专业`
+                                : '暂无专业'}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 text-sm font-medium"
+                            onClick={() => showAddMajorModal(college.collegeid)}
+                          >
+                            <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
+                            添加专业
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 w-9 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                            onClick={() => showDeleteCollegeModal(college)}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                            <span className="sr-only">删除学院</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <div
+                      className={cn(
+                        'transition-all duration-300 ease-in-out',
+                        isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
+                      )}
+                    >
+                      <Separator />
+                      <CardContent className="p-6 pt-5">
+                        {majors.length === 0 ? (
+                          <div className="text-center py-8 px-4">
+                            <BookOpen className="h-10 w-10 mx-auto text-muted-foreground opacity-40 mb-3" />
+                            <p className="text-muted-foreground mb-4">
+                              该学院暂无专业信息
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => showAddMajorModal(college.collegeid)}
+                            >
+                              <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
+                              添加专业
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="grid gap-3">
+                            {majors.map(major => (
+                              <div
+                                key={major.majorid}
+                                className="flex justify-between items-center px-4 py-3.5 rounded-md bg-accent/30 hover:bg-accent/50 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-primary/10 h-8 w-8 rounded-full flex items-center justify-center">
+                                    <BookOpen className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <span className="font-medium">
+                                    {major.majorname}
+                                  </span>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                    onClick={() => showDeleteMajorModal(major)}
+                                  >
+                                    <TrashIcon className="h-3.5 w-3.5" />
+                                    <span className="sr-only">删除专业</span>
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

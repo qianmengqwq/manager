@@ -16,11 +16,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { mutate } from 'swr'
 import { z } from 'zod'
-import {
-  addCollege,
-  deleteCollege,
-  updateCollege,
-} from './CollegeService'
+import { addCollege, deleteCollege } from './CollegeService'
 
 // 表单验证Schema
 const collegeFormSchema = z.object({
