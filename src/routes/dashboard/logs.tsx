@@ -1,8 +1,8 @@
-import type { EventLog } from '@/components/modules/logs/logType'
+import type { EventLog } from '@/components/modules/log/logType'
 import { DataTable } from '@/components/data-table/data-table'
-import { useColumns } from '@/components/modules/logs/columns'
-import { useLogDetailModal } from '@/components/modules/logs/LogModals'
-import { exportEventLogs, fetchEventLogs } from '@/components/modules/logs/LogService'
+import { useColumns } from '@/components/modules/log/columns'
+import { useLogDetailModal } from '@/components/modules/log/LogModals'
+import { exportEventLogs, fetchEventLogs } from '@/components/modules/log/LogService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {

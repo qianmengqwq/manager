@@ -53,4 +53,63 @@ export async function uploadUserAvatar(userId: number, file: File) {
     console.error('上传头像错误:', error)
     throw error
   }
-} 
+}
+
+// 上传活动图片，返回图片url
+export async function uploadImage(file: File) {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch(`/api/activity/addpic`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const data = await response.json() as ApiResponse<any>
+
+    if (data.code !== 1000) {
+      throw new Error(data.msg || '上传图片失败')
+    }
+
+    return data
+  }
+  catch (error) {
+    console.error('上传图片错误:', error)
+    throw error
+  }
+}
+
+// 获取活动图片预览
+export async function fetchActivityImage(imageKey: string) {
+  try {
+    const response = await fetch(`/api/activity/getpic?key=${imageKey}`)
+
+    if (!response.ok) {
+      throw new Error('获取图片失败')
+    }
+
+    const data = await response.json()
+
+    if (data.code !== 1000) {
+      throw new Error('获取图片失败')
+    }
+
+    const imageData = data.result
+    return `data:image/jpeg;base64,${imageData}`
+  }
+  catch (error) {
+    console.error('获取图片失败:', error)
+    throw error
+  }
+}
+
+// 创建本地文件预览URL
+export function createLocalImagePreview(file: File): string {
+  return URL.createObjectURL(file)
+}
+
+// 释放预览URL资源
+export function revokeImagePreview(previewUrl: string): void {
+  URL.revokeObjectURL(previewUrl)
+}
