@@ -17,6 +17,7 @@ import toast from 'react-hot-toast'
 import { z } from 'zod'
 import { archiveActivity, checkActivity, createActivity, deleteActivity, updateActivity } from './ActivityService'
 import { formatDateTime, getStatusColor, getStatusText } from './activityType'
+import { MilkdownPreview } from '@/components/milkdown'
 
 // 表单验证Schema
 const activityFormSchema = z.object({
@@ -99,9 +100,7 @@ export function useActivityDetailModal() {
 
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-1">活动介绍</p>
-              <div className="bg-muted p-3 rounded-md">
-                <p className="whitespace-pre-wrap">{activity.introduce || '暂无介绍'}</p>
-              </div>
+              <MilkdownPreview content={activity.introduce || ''} className="bg-muted rounded-md" />
             </div>
 
             {activity.piclist && activity.piclist.length > 0 && (

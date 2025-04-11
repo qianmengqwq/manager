@@ -16,6 +16,12 @@ function ActivityDetailPage() {
       const result = await fetchActivities(1, 1, { activityid: Number(activityId) })
       return result?.data?.[0] || null
     },
+    {
+      // 禁用自动重新验证，避免编辑器内容变化时触发不必要的请求
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 10000, // 10秒内相同请求只发送一次
+    },
   )
 
   // 更新成功回调

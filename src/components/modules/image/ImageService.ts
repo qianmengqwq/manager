@@ -89,14 +89,9 @@ export async function fetchActivityImage(imageKey: string) {
       throw new Error('获取图片失败')
     }
 
-    const data = await response.json()
-
-    if (data.code !== 1000) {
-      throw new Error('获取图片失败')
-    }
-
-    const imageData = data.result
-    return `data:image/jpeg;base64,${imageData}`
+    // 后端直接返回图片数据，不再需要解析JSON
+    const imageBlob = await response.blob()
+    return URL.createObjectURL(imageBlob)
   }
   catch (error) {
     console.error('获取图片失败:', error)

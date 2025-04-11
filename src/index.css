@@ -121,3 +121,146 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Milkdown编辑器样式 */
+.milkdown {
+  @apply text-foreground leading-7 whitespace-pre-wrap;
+
+  .ProseMirror {
+    @apply m-2 min-h-[200px] p-4 rounded-lg bg-card border border-input
+    transition-colors duration-200 focus:outline-none focus:ring-2
+    focus:ring-ring focus:border-ring;
+  }
+
+  h1,
+  h2 {
+    @apply pt-8 mb-6 mt-12 border-t border-muted-foreground/20 
+    font-bold tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl;
+  }
+
+  h2 {
+    @apply text-3xl;
+  }
+
+  h3,
+  h4 {
+    @apply mt-8 mb-4 font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-2xl;
+  }
+
+  h4 {
+    @apply text-xl;
+  }
+
+  h5,
+  h6 {
+    @apply my-3 font-medium;
+  }
+
+  p {
+    @apply my-4 leading-7 break-words;
+
+    code {
+      @apply font-mono text-sm px-1.5 py-0.5 bg-muted
+      rounded-md border border-border mx-1;
+    }
+  }
+
+  ul,
+  ol {
+    @apply my-6 pl-8 space-y-3;
+  }
+
+  ul {
+    @apply list-disc marker:text-muted-foreground;
+  }
+
+  ol {
+    @apply list-decimal marker:text-muted-foreground;
+  }
+
+  blockquote {
+    @apply my-6 pl-6 pr-4 py-2 border-l-4 border-primary/30
+    bg-primary/5 rounded-r-lg shadow-sm;
+
+    p {
+      @apply m-0;
+    }
+  }
+
+  pre {
+    @apply my-6 p-4 rounded-xl bg-muted border border-border
+    shadow-sm overflow-x-auto;
+
+    code {
+      @apply font-mono text-sm min-w-full float-left
+      bg-transparent border-0;
+    }
+  }
+
+  a {
+    @apply font-medium text-primary underline decoration-primary/30
+    underline-offset-2 cursor-pointer transition-colors duration-200
+    hover:text-primary/80 hover:decoration-primary/50 break-words;
+  }
+
+  img {
+    @apply max-w-full rounded-lg shadow-md my-6 border border-border;
+  }
+
+  table {
+    @apply w-full my-6 border border-border rounded-lg overflow-hidden
+    shadow-sm;
+
+    th,
+    td {
+      @apply border-b border-border px-4 py-2 text-left;
+    }
+
+    th {
+      @apply bg-muted font-semibold;
+    }
+
+    tr:nth-child(even) {
+      @apply bg-muted/50;
+    }
+
+    tr:hover {
+      @apply bg-muted transition-colors duration-200;
+    }
+
+    tr:last-child td {
+      @apply border-b-0;
+    }
+  }
+
+  del {
+    @apply line-through text-muted-foreground;
+  }
+
+  hr {
+    @apply my-8 border-border;
+  }
+
+  /* Additional refinements */
+  :not(pre) > code {
+    @apply text-sm bg-muted px-1.5 py-0.5 rounded-md font-mono
+    border border-border;
+  }
+
+  mark {
+    @apply bg-yellow-100 text-yellow-800 px-1 rounded;
+  }
+
+  kbd {
+    @apply px-2 py-1 text-sm font-mono bg-card border border-border
+    rounded shadow-sm;
+  }
+}

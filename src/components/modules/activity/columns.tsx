@@ -9,6 +9,7 @@ import { zhCN } from 'date-fns/locale'
 import { Archive, CheckCircle, Edit, Eye, ReplyAll, Trash2, XCircle } from 'lucide-react'
 import { useMemo } from 'react'
 import { getStatusColor, getStatusText } from './activityType'
+import { ImageGrid } from '../image'
 
 interface UseColumnsProps {
   showActivityDetail: (activity: Activity) => void
@@ -137,6 +138,26 @@ export function useColumns({
       enableColumnFilter: true,
       meta: {
         label: '参与人数',
+      },
+    },
+    {
+      id: 'piclist',
+      accessorKey: 'piclist',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="活动图片" />,
+      cell: ({ row }) => {
+        const piclist = row.original.piclist
+        if (!piclist || piclist.length === 0) {
+          return <span className="text-muted-foreground">无图片</span>
+        }
+        return (
+          <div className="w-full max-w-[200px]">
+            <ImageGrid imageKeys={piclist} maxDisplay={3} />
+          </div>
+        )
+      },
+      enableColumnFilter: false,
+      meta: {
+        label: '活动图片',
       },
     },
     {
