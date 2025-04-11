@@ -1,5 +1,3 @@
-import type { ApiResponse } from '@/types/api'
-
 // 定义活动类型
 export interface Activity {
   activityid: number

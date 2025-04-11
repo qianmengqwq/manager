@@ -1,8 +1,8 @@
 import type { EventLog } from './logType'
 import { Badge } from '@/components/ui/badge'
-import { getLevelText, getEventDetails, getOperationType } from './logType'
 import { useModalStack } from 'rc-modal-sheet'
 import { useCallback } from 'react'
+import { getEventDetails, getLevelText, getOperationType } from './logType'
 
 // 日志详情模态框
 export function useLogDetailModal() {
@@ -49,17 +49,17 @@ export function useLogDetailModal() {
         // 操作类型颜色映射
         const getOperationBadge = (operation: string) => {
           const colorMap: Record<string, string> = {
-            '查询': 'bg-gray-100 text-gray-800',
-            '创建': 'bg-blue-100 text-blue-800',
-            '更新': 'bg-amber-100 text-amber-800',
-            '删除': 'bg-red-100 text-red-800',
-            '登录': 'bg-green-100 text-green-800',
-            '登出': 'bg-green-100 text-green-800',
-            '发送': 'bg-indigo-100 text-indigo-800',
-            '导入': 'bg-purple-100 text-purple-800',
-            '导出': 'bg-purple-100 text-purple-800',
+            查询: 'bg-gray-100 text-gray-800',
+            创建: 'bg-blue-100 text-blue-800',
+            更新: 'bg-amber-100 text-amber-800',
+            删除: 'bg-red-100 text-red-800',
+            登录: 'bg-green-100 text-green-800',
+            登出: 'bg-green-100 text-green-800',
+            发送: 'bg-indigo-100 text-indigo-800',
+            导入: 'bg-purple-100 text-purple-800',
+            导出: 'bg-purple-100 text-purple-800',
           }
-          
+
           const color = colorMap[operation] || 'bg-gray-100 text-gray-800'
           return <Badge variant="outline" className={color}>{operation}</Badge>
         }
@@ -123,4 +123,4 @@ export function useLogDetailModal() {
       },
     })
   }, [present])
-} 
+}

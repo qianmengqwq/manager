@@ -1,16 +1,14 @@
 import type { UserFromResponse } from '@/types/user'
-import { Badge } from '@/components/ui/badge'
-import { useEffect, useState } from 'react'
-import { USER_ROLE_MAP } from './userType'
 import { UserAvatar } from '@/components/modules/image'
+import { Badge } from '@/components/ui/badge'
+import { USER_ROLE_MAP } from './userType'
 
 interface UserDetailProps {
   user: UserFromResponse
-  avatarUrl?: string
   onAvatarUpdate?: (newProfilePicture: string) => void
 }
 
-export function UserDetail({ user, avatarUrl, onAvatarUpdate }: UserDetailProps) {
+export function UserDetail({ user, onAvatarUpdate }: UserDetailProps) {
   return (
     <div className="space-y-4 py-2">
       <div className="flex items-center gap-4 mb-4">

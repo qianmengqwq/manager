@@ -8,7 +8,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import {
-  insertImageCommand,
   toggleLinkCommand,
 } from '@milkdown/preset-commonmark'
 import { callCommand } from '@milkdown/utils'

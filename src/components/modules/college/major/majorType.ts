@@ -1,5 +1,3 @@
-import type { ApiResponse } from '@/types/api'
-
 // 定义专业类型
 export interface Major {
   majorid: number
@@ -36,4 +34,4 @@ export interface UpdateMajorParams {
   majorname: string
   collegeid: number
   collegename?: string
-} 
+}

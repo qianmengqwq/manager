@@ -5,6 +5,6 @@ import { fetchMajors } from './MajorService'
 export {
   fetchMajors,
   type Major,
-  useDeleteMajorModal,
   useAddMajorModal,
+  useDeleteMajorModal,
 }

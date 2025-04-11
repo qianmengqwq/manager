@@ -40,7 +40,7 @@ export function SecondaryVerifyForm({
         <p className="text-sm text-muted-foreground mb-4">
           该操作需要进行二级验证，请输入您的密码。
         </p>
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -48,11 +48,11 @@ export function SecondaryVerifyForm({
             <FormItem>
               <FormLabel>密码</FormLabel>
               <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder="请输入密码" 
+                <Input
+                  type="password"
+                  placeholder="请输入密码"
                   autoComplete="current-password"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -71,4 +71,4 @@ export function SecondaryVerifyForm({
       </form>
     </Form>
   )
-} 
+}

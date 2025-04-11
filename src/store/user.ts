@@ -31,10 +31,11 @@ export const useUserStore = create<UserState>()(
       setVerified: (verified: boolean) => {
         if (verified) {
           // 设置验证过期时间为5分钟后
-          const expireTime = Date.now() + 5 * 60 * 1000;
-          set({ isVerified: true, verifyExpireTime: expireTime });
-        } else {
-          set({ isVerified: false, verifyExpireTime: null });
+          const expireTime = Date.now() + 5 * 60 * 1000
+          set({ isVerified: true, verifyExpireTime: expireTime })
+        }
+        else {
+          set({ isVerified: false, verifyExpireTime: null })
         }
       },
     }),
@@ -46,12 +47,12 @@ export const useUserStore = create<UserState>()(
 
 // 检查二级验证是否过期
 export function checkVerifyExpired(): boolean {
-  const { verifyExpireTime, isVerified } = useUserStore.getState();
-  
+  const { verifyExpireTime, isVerified } = useUserStore.getState()
+
   if (!isVerified || !verifyExpireTime) {
-    return true;
+    return true
   }
-  
+
   // 当前时间超过过期时间，验证已过期
-  return Date.now() > verifyExpireTime;
+  return Date.now() > verifyExpireTime
 }

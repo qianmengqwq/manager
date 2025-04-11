@@ -14,12 +14,14 @@ import { useNavigate } from '@tanstack/react-router'
 import { LogOut, Settings, User } from 'lucide-react'
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { fetchUserAvatar } from '../image/ImageService'
+import { useProfileModal, useSettingsModal } from './UserModals'
 import { logoutUser } from './UserService'
 
 export function UserMenu() {
   const { currentUser, logout } = useUserStore()
   const navigate = useNavigate()
+  const showProfile = useProfileModal()
+  const showSettings = useSettingsModal()
 
   // 如果没有登录信息，则跳转到登录页面
   useEffect(() => {
@@ -106,11 +108,11 @@ export function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={showProfile}>
             <User className="mr-2 h-4 w-4" />
             <span>个人资料</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={showSettings}>
             <Settings className="mr-2 h-4 w-4" />
             <span>设置</span>
           </DropdownMenuItem>

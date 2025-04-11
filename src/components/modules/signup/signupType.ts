@@ -1,5 +1,3 @@
-import type { ApiResponse } from '@/types/api'
-
 // 定义活动报名信息类型
 export interface ActivitySignup {
   applyid: number
@@ -85,4 +83,4 @@ export function formatDateTime(dateString: string): string {
     console.error('日期格式化错误:', error)
     return dateString
   }
-} 
+}

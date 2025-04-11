@@ -1,6 +1,3 @@
-import type { ApiResponse } from '@/types/api'
-import type { Major } from './major/majorType'
-
 // 定义学院类型
 export interface College {
   collegeid: number

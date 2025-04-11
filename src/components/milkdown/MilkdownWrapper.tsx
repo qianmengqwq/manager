@@ -1,4 +1,3 @@
-import { useMilkdownStore } from '@/store/milkdownStore'
 import { MilkdownProvider } from '@milkdown/react'
 import { useCallback, useRef, useState } from 'react'
 import { MilkdownEditor } from './Editor'
@@ -22,16 +21,16 @@ export function MilkdownWrapper({
 }: Props) {
   const markdownRef = useRef(initialValue)
   const [initialMarkdown] = useState(initialValue)
-  
+
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const saveMarkdown = useCallback((value: string) => {
     markdownRef.current = value
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
     }
-    
+
     debounceTimerRef.current = setTimeout(() => {
       onChange(value)
     }, 500)

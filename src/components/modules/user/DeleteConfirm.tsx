@@ -1,4 +1,3 @@
-import type { UserFromResponse } from '@/types/user'
 import { Button } from '@/components/ui/button'
 
 interface DeleteConfirmProps {

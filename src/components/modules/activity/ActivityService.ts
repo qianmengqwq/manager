@@ -1,5 +1,5 @@
 import type { ApiResponse } from '@/types/api'
-import type { ActivityListResult, CreateActivityRequest, UpdateActivityRequest } from './activityType'
+import type { CreateActivityRequest, UpdateActivityRequest } from './activityType'
 
 // 查询活动列表
 export async function fetchActivities(

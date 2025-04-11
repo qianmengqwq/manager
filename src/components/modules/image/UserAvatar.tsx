@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Upload, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { createLocalImagePreview, fetchUserAvatar, uploadUserAvatar } from './ImageService'
+import { fetchUserAvatar, uploadUserAvatar } from './ImageService'
 
 interface UserAvatarProps {
   userId: number

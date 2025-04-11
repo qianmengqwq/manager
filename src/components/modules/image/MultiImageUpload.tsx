@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { ImageIcon, Loader2, Upload, X } from 'lucide-react'
+import { Loader2, Upload, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { ImagePreview } from './ImagePreview'

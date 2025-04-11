@@ -2,7 +2,6 @@ import type { ApiResponse } from '@/types/api'
 import type {
   AddCollegeParams,
   CollegeListResult,
-  UpdateCollegeParams,
 } from './collegeType'
 
 // 获取学院列表

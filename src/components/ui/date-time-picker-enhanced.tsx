@@ -7,18 +7,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
-import { Calendar as CalendarIcon, Clock } from 'lucide-react'
-import * as React from 'react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
+import { Calendar as CalendarIcon, Clock } from 'lucide-react'
+import * as React from 'react'
 
 interface DateTimePickerEnhancedProps {
   date: Date | undefined
@@ -39,12 +39,12 @@ export function DateTimePickerEnhanced({
 }: DateTimePickerEnhancedProps) {
   const hours = React.useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
   const minutes = React.useMemo(() => Array.from({ length: 60 }, (_, i) => i), [])
-  
+
   const [selectedHour, setSelectedHour] = React.useState<string>(
-    date ? format(date, 'HH') : '00'
+    date ? format(date, 'HH') : '00',
   )
   const [selectedMinute, setSelectedMinute] = React.useState<string>(
-    date ? format(date, 'mm') : '00'
+    date ? format(date, 'mm') : '00',
   )
 
   // 时间变化时更新日期
@@ -52,16 +52,18 @@ export function DateTimePickerEnhanced({
     (type: 'hour' | 'minute', value: string) => {
       if (type === 'hour') {
         setSelectedHour(value)
-      } else {
+      }
+      else {
         setSelectedMinute(value)
       }
 
       if (date) {
         const newDate = new Date(date)
         if (type === 'hour') {
-          newDate.setHours(parseInt(value))
-        } else {
-          newDate.setMinutes(parseInt(value))
+          newDate.setHours(Number.parseInt(value))
+        }
+        else {
+          newDate.setMinutes(Number.parseInt(value))
         }
         setDate(newDate)
       }
@@ -73,8 +75,8 @@ export function DateTimePickerEnhanced({
   const handleDateSelect = React.useCallback(
     (selectedDate: Date | undefined) => {
       if (selectedDate) {
-        selectedDate.setHours(parseInt(selectedHour))
-        selectedDate.setMinutes(parseInt(selectedMinute))
+        selectedDate.setHours(Number.parseInt(selectedHour))
+        selectedDate.setMinutes(Number.parseInt(selectedMinute))
       }
       setDate(selectedDate)
     },
@@ -117,13 +119,13 @@ export function DateTimePickerEnhanced({
               <div className="flex items-center gap-2 ml-auto">
                 <Select
                   value={selectedHour}
-                  onValueChange={(value) => handleTimeChange('hour', value)}
+                  onValueChange={value => handleTimeChange('hour', value)}
                 >
                   <SelectTrigger className="w-[70px]">
                     <SelectValue placeholder="小时" />
                   </SelectTrigger>
                   <SelectContent>
-                    {hours.map((hour) => (
+                    {hours.map(hour => (
                       <SelectItem key={hour} value={hour.toString().padStart(2, '0')}>
                         {hour.toString().padStart(2, '0')}
                       </SelectItem>
@@ -133,13 +135,13 @@ export function DateTimePickerEnhanced({
                 <span>:</span>
                 <Select
                   value={selectedMinute}
-                  onValueChange={(value) => handleTimeChange('minute', value)}
+                  onValueChange={value => handleTimeChange('minute', value)}
                 >
                   <SelectTrigger className="w-[70px]">
                     <SelectValue placeholder="分钟" />
                   </SelectTrigger>
                   <SelectContent>
-                    {minutes.map((minute) => (
+                    {minutes.map(minute => (
                       <SelectItem key={minute} value={minute.toString().padStart(2, '0')}>
                         {minute.toString().padStart(2, '0')}
                       </SelectItem>
@@ -153,4 +155,4 @@ export function DateTimePickerEnhanced({
       </PopoverContent>
     </Popover>
   )
-} 
+}

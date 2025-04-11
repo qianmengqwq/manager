@@ -1,6 +1,6 @@
 import type { CmdKey } from '@milkdown/core'
 import type { UseEditorReturn } from '@milkdown/react'
-import { fetchActivityImage, uploadImage } from '@/components/modules/image/ImageService'
+import { uploadImage } from '@/components/modules/image/ImageService'
 import { Button } from '@/components/ui/button'
 import { insertImageCommand } from '@milkdown/preset-commonmark'
 import { callCommand } from '@milkdown/utils'

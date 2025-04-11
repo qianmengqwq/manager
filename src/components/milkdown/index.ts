@@ -1,4 +1,4 @@
 export * from './Editor'
-export * from './MilkdownWrapper'
 export * from './MilkdownPreview'
-export * from './PreviewModal' 
+export * from './MilkdownWrapper'
+export * from './PreviewModal'

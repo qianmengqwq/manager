@@ -1,12 +1,15 @@
+import type { Activity } from '@/components/modules/activity/activityType'
 import type { ActivitySignup } from '@/components/modules/signup/signupType'
+import { DataTable } from '@/components/data-table/data-table'
+import { useArchiveActivityModal } from '@/components/modules/activity/ActivityModals'
+import { fetchActivities } from '@/components/modules/activity/ActivityService'
+import { useColumns } from '@/components/modules/signup/columns'
 import {
   useApproveSignupModal,
   useRejectSignupModal,
   useSignupDetailModal,
 } from '@/components/modules/signup/SignupModals'
 import { fetchActivitySignups } from '@/components/modules/signup/SignupService'
-import { useColumns } from '@/components/modules/signup/columns'
-import { DataTable } from '@/components/data-table/data-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -18,13 +21,13 @@ import {
 } from '@/components/ui/select'
 import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowLeft, Search } from 'lucide-react'
+import { Archive, ArrowLeft, Search } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import useSWR from 'swr'
 
 function ActivitySignupPage() {
   const params = useParams({ from: '/dashboard/signup/$activityId' })
-  const activityId = parseInt(params.activityId, 10)
+  const activityId = Number.parseInt(params.activityId, 10)
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -35,12 +38,32 @@ function ActivitySignupPage() {
     navigate({ to: '/dashboard/signup' })
   }, [navigate])
 
+  // 获取活动详情
+  const { data: activityData } = useSWR(
+    ['activity-detail', activityId],
+    async () => {
+      // 先获取活动列表中包含当前活动的页面
+      const response = await fetchActivities(1, 50, { activityid: activityId })
+      // 从结果中找到当前活动
+      const activity = response.data.find((act: Activity) => act.activityid === activityId)
+      if (!activity) {
+        throw new Error('未找到活动信息')
+      }
+      return activity as Activity
+    },
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // 缓存1分钟
+    },
+  )
+
   // 初始化模态框
   const showSignupDetail = useSignupDetailModal()
   const showApproveSignup = useApproveSignupModal()
   const showRejectSignup = useRejectSignupModal()
+  const showArchiveActivity = useArchiveActivityModal()
 
-  // 刷新数据的回调函数
+  // 报名数据
   const { data: signupsData, mutate: refreshSignups } = useSWR(
     ['activity-signups', activityId, page, pageSize, searchTerm, statusFilter],
     async () => {
@@ -61,7 +84,7 @@ function ActivitySignupPage() {
 
       // 添加状态筛选
       if (statusFilter !== 'all') {
-        filters.ischeck = parseInt(statusFilter, 10)
+        filters.ischeck = Number.parseInt(statusFilter, 10)
       }
 
       // 获取报名列表
@@ -70,7 +93,7 @@ function ActivitySignupPage() {
     {
       revalidateOnFocus: false,
       onError: (error) => {
-        console.error({ '获取报名数据失败': error })
+        console.error({ 获取报名数据失败: error })
       },
     },
   )
@@ -90,6 +113,16 @@ function ActivitySignupPage() {
     showRejectSignup(signup, onDataChange)
   }, [showRejectSignup, onDataChange])
 
+  // 归档活动回调
+  const onArchiveActivity = useCallback(() => {
+    if (activityData) {
+      showArchiveActivity(activityData, () => {
+        // 归档成功后重定向回报名列表页面
+        navigate({ to: '/dashboard/signup' })
+      })
+    }
+  }, [showArchiveActivity, activityData, navigate])
+
   // 定义表格列
   const columns = useColumns({
     showSignupDetail,
@@ -102,11 +135,17 @@ function ActivitySignupPage() {
     data: signupsData?.data || [],
     columns,
     pageCount: signupsData?.pageTotal || 1,
-    manualPagination: true,
     getRowId: row => row.applyid.toString(),
-    onPaginationChange: ({ pageIndex, pageSize: newPageSize }) => {
-      setPage(pageIndex + 1)
-      setPageSize(newPageSize)
+    onPaginationChange: (updater) => {
+      if (typeof updater === 'function') {
+        const newState = updater({ pageIndex: page - 1, pageSize })
+        setPage(newState.pageIndex + 1)
+        setPageSize(newState.pageSize)
+      }
+      else {
+        setPage(updater.pageIndex + 1)
+        setPageSize(updater.pageSize)
+      }
     },
     initialState: {
       pagination: {
@@ -122,13 +161,32 @@ function ActivitySignupPage() {
     setPage(1) // 重置到第一页
   }
 
+  // 确定活动是否可归档（如果状态不是3-已归档）
+  const canArchive = activityData && activityData.status !== 3
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={goBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-2xl font-bold">活动报名管理</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={goBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-2xl font-bold">
+            活动报名管理
+            {activityData && ` - ${activityData.activityname}`}
+          </h2>
+        </div>
+
+        {canArchive && (
+          <Button
+            variant="outline"
+            onClick={onArchiveActivity}
+            className="ml-auto"
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            归档活动
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
@@ -159,7 +217,6 @@ function ActivitySignupPage() {
 
       <DataTable
         table={table}
-        isLoading={!signupsData}
       />
     </div>
   )
@@ -167,4 +224,4 @@ function ActivitySignupPage() {
 
 export const Route = createFileRoute('/dashboard/signup/$activityId')({
   component: ActivitySignupPage,
-}) 
+})

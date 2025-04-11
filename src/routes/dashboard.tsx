@@ -1,6 +1,6 @@
 import { UserMenu } from '@/components/modules/user'
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
-import { BarChart3, Building2, Calendar, ClipboardCheck, FileText, LayoutDashboard, Users, BookOpen, History, PieChart, CalendarClock } from 'lucide-react'
+import { BookOpen, CalendarClock, ClipboardCheck, History, LayoutDashboard, PieChart, Users } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 export const Route = createFileRoute('/dashboard')({
@@ -24,9 +24,8 @@ function NavItem({ href, title, icon, isChild = false }: NavItemProps) {
           isActive
             ? 'bg-primary text-primary-foreground'
             : 'hover:bg-muted',
-          isChild && 'ml-4'
-        )
-      }
+          isChild && 'ml-4',
+        )}
     >
       {icon}
       <span className="ml-3">{title}</span>
@@ -52,7 +51,7 @@ export function DashboardLayout() {
         <div className="text-xl font-bold mb-6">后台管理系统</div>
 
         <nav className="space-y-1">
-          {navigation.map((item) => (
+          {navigation.map(item => (
             <NavItem
               key={item.name}
               href={item.href}

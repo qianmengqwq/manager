@@ -1,6 +1,7 @@
 import type { UserFromResponse } from '@/types/user'
 import type { UserFormValues } from './userType'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useUserStore } from '@/store/user'
 import { useModalStack } from 'rc-modal-sheet'
 import { useCallback, useEffect, useState } from 'react'
@@ -28,7 +29,6 @@ export function useUserDetailModal() {
       content: () => {
         const [user, setUser] = useState<UserFromResponse | null>(null)
         const [isLoading, setIsLoading] = useState(true)
-        const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
         // 获取用户详情
         useEffect(() => {
@@ -37,30 +37,6 @@ export function useUserDetailModal() {
             try {
               const detail = await fetchUserDetail(userId)
               setUser(detail)
-
-              // 如果用户有头像，获取头像
-              if (detail?.profilepicture) {
-                try {
-                  const response = await fetch(`/api/user/getuserpic?key=${detail.profilepicture}`)
-
-                  if (!response.ok) {
-                    throw new Error('获取头像失败')
-                  }
-
-                  const data = await response.json()
-
-                  if (data.code !== 1000) {
-                    throw new Error('获取头像失败')
-                  }
-
-                  const imageData = data.result
-                  const pictureUrl = `data:image/jpeg;base64,${imageData}`
-                  setAvatarUrl(pictureUrl)
-                }
-                catch (error) {
-                  console.error('获取头像失败:', error)
-                }
-              }
             }
             catch (error) {
               toast.error('获取用户详情失败')
@@ -87,7 +63,7 @@ export function useUserDetailModal() {
           return <div className="py-8 text-center">用户不存在或已被删除</div>
         }
 
-        return <UserDetail user={user} avatarUrl={avatarUrl || undefined} />
+        return <UserDetail user={user} />
       },
     })
   }, [present])
@@ -443,4 +419,161 @@ export function useKickOutModal() {
       ),
     })
   }, [present])
+}
+
+// 个人资料模态框
+export function useProfileModal() {
+  const { present } = useModalStack()
+  const currentUser = useUserStore(state => state.currentUser)
+
+  return useCallback(() => {
+    if (!currentUser) {
+      toast.error('未登录或登录状态异常')
+      return
+    }
+
+    present({
+      title: '个人资料',
+      content: () => {
+        const [user, setUser] = useState<UserFromResponse | null>(null)
+        const [isLoading, setIsLoading] = useState(true)
+        const [_avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
+        useEffect(() => {
+          const fetchData = async () => {
+            setIsLoading(true)
+            try {
+              const detail = await fetchUserDetail(currentUser.userid)
+              setUser(detail)
+
+              if (detail?.profilepicture) {
+                try {
+                  const response = await fetch(`/api/user/getuserpic?key=${detail.profilepicture}`)
+                  if (!response.ok) {
+                    throw new Error('获取头像失败')
+                  }
+                  const data = await response.json()
+                  if (data.code !== 1000) {
+                    throw new Error('获取头像失败')
+                  }
+                  const imageData = data.result
+                  const pictureUrl = `data:image/jpeg;base64,${imageData}`
+                  setAvatarUrl(pictureUrl)
+                }
+                catch (error) {
+                  console.error('获取头像失败:', error)
+                }
+              }
+            }
+            catch (error) {
+              toast.error('获取用户详情失败')
+              console.error(error)
+            }
+            finally {
+              setIsLoading(false)
+            }
+          }
+
+          fetchData()
+        }, [currentUser.userid])
+
+        if (isLoading) {
+          return <div className="py-8 text-center">加载中...</div>
+        }
+
+        if (!user) {
+          return <div className="py-8 text-center">用户不存在或已被删除</div>
+        }
+
+        return <UserDetail user={user} />
+      },
+    })
+  }, [present, currentUser])
+}
+
+// 设置模态框
+export function useSettingsModal() {
+  const { present } = useModalStack()
+  const currentUser = useUserStore(state => state.currentUser)
+
+  return useCallback(() => {
+    if (!currentUser) {
+      toast.error('未登录或登录状态异常')
+      return
+    }
+
+    present({
+      title: '设置',
+      content: () => {
+        const [isSubmitting, setIsSubmitting] = useState(false)
+        const [formData, setFormData] = useState({
+          email: currentUser.email || '',
+          account: currentUser.account || '',
+        })
+
+        const handleSubmit = async (e: React.FormEvent) => {
+          e.preventDefault()
+          setIsSubmitting(true)
+          try {
+            await updateUser({
+              ...formData,
+              userid: currentUser.userid,
+              username: currentUser.username,
+              level: currentUser.level,
+              password: '', // 不修改密码
+            })
+            toast.success('设置已更新')
+            present({ title: '', content: () => null })
+          }
+          catch (error) {
+            console.error('更新设置失败:', error)
+            toast.error('更新设置失败')
+          }
+          finally {
+            setIsSubmitting(false)
+          }
+        }
+
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                邮箱
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="请输入邮箱"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="account" className="text-sm font-medium">
+                账号
+              </label>
+              <Input
+                id="account"
+                type="text"
+                value={formData.account}
+                onChange={e => setFormData(prev => ({ ...prev, account: e.target.value }))}
+                placeholder="请输入账号"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => present({ title: '', content: () => null })}
+              >
+                取消
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? '保存中...' : '保存'}
+              </Button>
+            </div>
+          </form>
+        )
+      },
+    })
+  }, [present, currentUser])
 }

@@ -1,11 +1,11 @@
 import type { ActivitySignup } from './signupType'
 
 import { Button } from '@/components/ui/button'
-import { checkActivitySignup } from './SignupService'
-import { formatDateTime } from './signupType'
 import { useModalStack } from 'rc-modal-sheet'
 import { useCallback } from 'react'
 import toast from 'react-hot-toast'
+import { checkActivitySignup } from './SignupService'
+import { formatDateTime } from './signupType'
 
 // 报名详情模态框
 export function useSignupDetailModal() {
@@ -94,7 +94,12 @@ export function useApproveSignupModal() {
 
         return (
           <div className="space-y-4">
-            <p>确定要通过 {signup.name} 的报名申请吗？</p>
+            <p>
+              确定要通过
+              {signup.name}
+              {' '}
+              的报名申请吗？
+            </p>
             <div className="flex justify-end space-x-2">
               <Button variant="outline">
                 取消
@@ -132,7 +137,12 @@ export function useRejectSignupModal() {
 
         return (
           <div className="space-y-4">
-            <p>确定要拒绝 {signup.name} 的报名申请吗？</p>
+            <p>
+              确定要拒绝
+              {signup.name}
+              {' '}
+              的报名申请吗？
+            </p>
             <div className="flex justify-end space-x-2">
               <Button variant="outline">
                 取消

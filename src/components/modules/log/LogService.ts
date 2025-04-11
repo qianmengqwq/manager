@@ -3,17 +3,17 @@ import type { EventLogListResult } from './logType'
 
 // 获取系统事件日志
 export async function fetchEventLogs(
-  page: number, 
-  pageSize: number, 
+  page: number,
+  pageSize: number,
   filters?: {
-    module?: string,
-    username?: string,
-    level?: number,
-    ip?: string,
-    dateFrom?: string,
-    dateTo?: string,
+    module?: string
+    username?: string
+    level?: number
+    ip?: string
+    dateFrom?: string
+    dateTo?: string
     event?: string
-  }
+  },
 ) {
   try {
     const response = await fetch(`/api/event/getevent`, {
@@ -21,15 +21,15 @@ export async function fetchEventLogs(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        page, 
+      body: JSON.stringify({
+        page,
         pageSize,
-        module: filters?.module || "",
-        username: filters?.username || "",
+        module: filters?.module || '',
+        username: filters?.username || '',
         level: filters?.level || 0,
-        ip: filters?.ip || "",
-        dateTime: filters?.dateFrom ? filters.dateFrom : "",
-        event: filters?.event || ""
+        ip: filters?.ip || '',
+        dateTime: filters?.dateFrom ? filters.dateFrom : '',
+        event: filters?.event || '',
       }),
     })
 
@@ -75,7 +75,7 @@ export async function exportEventLogs(filter?: Record<string, any>) {
 
     // 获取blob数据
     const blob = await response.blob()
-    
+
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -83,15 +83,15 @@ export async function exportEventLogs(filter?: Record<string, any>) {
     a.download = `系统日志_${new Date().toISOString().split('T')[0]}.xlsx`
     document.body.appendChild(a)
     a.click()
-    
+
     // 清理
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
-    
+
     return true
   }
   catch (error) {
     console.error('导出日志错误:', error)
     throw error
   }
-} 
+}

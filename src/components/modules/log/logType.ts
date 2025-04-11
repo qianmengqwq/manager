@@ -1,5 +1,3 @@
-import type { ApiResponse } from '@/types/api'
-
 // 定义日志类型
 export interface EventLog {
   eventid: number
@@ -92,6 +90,7 @@ export function getEventMessage(event: string): string {
       }
     }
     catch (e) {
+      console.error({ 解析JSON失败: e })
       // 解析JSON失败，忽略错误
     }
   }

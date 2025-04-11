@@ -82,10 +82,10 @@ export const customUploader: Uploader = async (files, schema) => {
         }
 
         const imageKey = result.result
-        
+
         // 使用API URL构建图片链接而不是base64数据
         const imageUrl = `/api/activity/getpic?key=${imageKey}`
-        
+
         return schema.nodes.image.createAndFill({
           src: imageUrl,
           alt: image.name,

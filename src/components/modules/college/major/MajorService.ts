@@ -2,7 +2,6 @@ import type { ApiResponse } from '@/types/api'
 import type {
   AddMajorParams,
   MajorListResult,
-  UpdateMajorParams,
 } from './majorType'
 
 // 获取专业列表
@@ -82,7 +81,6 @@ export async function addMajor(params: AddMajorParams) {
     throw error
   }
 }
-
 
 // 删除专业
 export async function deleteMajor(majorid: number) {

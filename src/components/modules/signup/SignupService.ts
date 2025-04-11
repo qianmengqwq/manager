@@ -24,7 +24,7 @@ export async function fetchActivities(
       throw new Error('获取活动列表失败')
 
     const data = await response.json() as ApiResponse<any>
-    console.log({ '活动数据响应': data })
+    console.log({ 活动数据响应: data })
 
     if (data.code !== 1000)
       throw new Error(data.msg || '获取活动列表失败')
@@ -52,7 +52,7 @@ export async function fetchActivities(
     }
   }
   catch (error) {
-    console.error({ '获取活动列表错误': error })
+    console.error({ 获取活动列表错误: error })
     throw error
   }
 }
@@ -87,7 +87,7 @@ export async function fetchActivitySignups(filters: SignupFilter) {
       throw new Error('获取报名信息失败')
 
     const data = await response.json() as ApiResponse<SignupListResult>
-    console.log({ '报名数据响应': data })
+    console.log({ 报名数据响应: data })
 
     if (data.code !== 1000)
       throw new Error(data.msg || '获取报名信息失败')
@@ -115,7 +115,7 @@ export async function fetchActivitySignups(filters: SignupFilter) {
     }
   }
   catch (error) {
-    console.error({ '获取报名信息错误': error })
+    console.error({ 获取报名信息错误: error })
     throw error
   }
 }
@@ -134,7 +134,7 @@ export async function checkActivitySignup(applyId: number, isCheck: number) {
       throw new Error('审核报名失败')
 
     const data = await response.json() as ApiResponse<any>
-    console.log({ '审核报名响应': data })
+    console.log({ 审核报名响应: data })
 
     if (data.code !== 1000)
       throw new Error(data.msg || '审核报名失败')
@@ -142,7 +142,7 @@ export async function checkActivitySignup(applyId: number, isCheck: number) {
     return data.result
   }
   catch (error) {
-    console.error({ '审核报名错误': error })
+    console.error({ 审核报名错误: error })
     throw error
   }
-} 
+}

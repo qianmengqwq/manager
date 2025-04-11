@@ -83,7 +83,7 @@ function LogsPage() {
     if (!logs.length)
       return []
 
-    const modules = [...new Set(logs.map(log => log.module))]
+    const modules = ['活动管理', '用户管理', '报名管理']
     return modules.sort()
   }, [logs])
 

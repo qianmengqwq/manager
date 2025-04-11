@@ -1,5 +1,5 @@
-import type { ActivitySignup } from './signupType'
 import type { ColumnDef } from '@tanstack/react-table'
+import type { ActivitySignup } from './signupType'
 
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { Badge } from '@/components/ui/badge'
@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { formatDateTime, getCheckStatusColor, getCheckStatusText } from './signupType'
 import { Check, Eye, MoreHorizontal, X } from 'lucide-react'
+import { formatDateTime, getCheckStatusColor, getCheckStatusText } from './signupType'
 
 interface UseColumnsProps {
   showSignupDetail: (signup: ActivitySignup) => void
@@ -175,4 +175,4 @@ export function useColumns({
   ]
 
   return columns
-} 
+}

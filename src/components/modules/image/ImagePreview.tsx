@@ -13,7 +13,7 @@ interface ImagePreviewProps {
 
 /**
  * 通用图片预览组件
- * 
+ *
  * 可以接收图片的key（用于从API获取）或者直接的previewUrl
  * 如果同时提供了两者，则优先使用previewUrl
  */
@@ -30,8 +30,8 @@ export function ImagePreview({
   const [imageUrl, setImageUrl] = useState<string | null>(previewUrl || null)
 
   const aspectRatioClass = {
-    square: 'aspect-square',
-    auto: '',
+    'square': 'aspect-square',
+    'auto': '',
     '16/9': 'aspect-video',
     '4/3': 'aspect-4/3',
   }[aspectRatio]
@@ -123,11 +123,12 @@ export function ImageGrid({
       {imageKeys.slice(0, displayCount).map((key, index) => (
         <ImagePreview key={index} imageKey={key} aspectRatio="square" />
       ))}
-      
+
       {hasMore && (
         <div className="bg-muted flex items-center justify-center aspect-square rounded-md">
           <span className="text-muted-foreground font-medium">
-            +{imageKeys.length - maxDisplay}
+            +
+            {imageKeys.length - maxDisplay}
           </span>
         </div>
       )}
