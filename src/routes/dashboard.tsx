@@ -1,6 +1,6 @@
 import { UserMenu } from '@/components/modules/user'
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
-import { BarChart3, Building2, Calendar, ClipboardCheck, FileText, LayoutDashboard, Users } from 'lucide-react'
+import { BarChart3, Building2, Calendar, ClipboardCheck, FileText, LayoutDashboard, Users, BookOpen, History, PieChart, CalendarClock } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 export const Route = createFileRoute('/dashboard')({
@@ -11,27 +11,38 @@ interface NavItemProps {
   href: string
   title: string
   icon: React.ReactNode
-  isActive?: boolean
   isChild?: boolean
 }
 
-function NavItem({ href, title, icon, isActive, isChild }: NavItemProps) {
+function NavItem({ href, title, icon, isChild = false }: NavItemProps) {
   return (
     <Link
       to={href}
-      className={cn(
-        'flex items-center gap-2 px-3 py-2 rounded-md transition-colors',
-        isActive
-          ? 'bg-primary/10 text-primary'
-          : 'hover:bg-muted',
-        isChild && 'ml-6',
-      )}
+      className={({ isActive }) =>
+        cn(
+          'group flex items-center rounded-md px-3 py-2 text-sm font-medium',
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'hover:bg-muted',
+          isChild && 'ml-4'
+        )
+      }
     >
       {icon}
-      <span>{title}</span>
+      <span className="ml-3">{title}</span>
     </Link>
   )
 }
+
+const navigation = [
+  { name: '概览', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+  { name: '活动管理', href: '/dashboard/activities', icon: <CalendarClock className="h-5 w-5" /> },
+  { name: '报名管理', href: '/dashboard/signup', icon: <ClipboardCheck className="h-5 w-5" /> },
+  { name: '日志记录', href: '/dashboard/logs', icon: <History className="h-5 w-5" /> },
+  { name: '用户管理', href: '/dashboard/users', icon: <Users className="h-5 w-5" /> },
+  { name: '学院管理', href: '/dashboard/college', icon: <BookOpen className="h-5 w-5" /> },
+  { name: '数据分析', href: '/dashboard/analytics', icon: <PieChart className="h-5 w-5" /> },
+]
 
 export function DashboardLayout() {
   return (
@@ -41,67 +52,14 @@ export function DashboardLayout() {
         <div className="text-xl font-bold mb-6">后台管理系统</div>
 
         <nav className="space-y-1">
-          <NavItem
-            href="/dashboard"
-            title="控制面板"
-            icon={<LayoutDashboard className="h-5 w-5" />}
-          />
-
-          {/* 系统管理 */}
-          <div className="pt-4">
-            <div className="text-sm font-medium text-muted-foreground mb-2">系统管理</div>
+          {navigation.map((item) => (
             <NavItem
-              href="/dashboard/users"
-              title="用户管理"
-              icon={<Users className="h-5 w-5" />}
-              isChild
+              key={item.name}
+              href={item.href}
+              title={item.name}
+              icon={item.icon}
             />
-            <NavItem
-              href="/dashboard/logs"
-              title="日志记录"
-              icon={<FileText className="h-5 w-5" />}
-              isChild
-            />
-          </div>
-
-          {/* 院系管理 */}
-          <div className="pt-4">
-            <div className="text-sm font-medium text-muted-foreground mb-2">院系管理</div>
-            <NavItem
-              href="/dashboard/college"
-              title="院系管理"
-              icon={<Building2 className="h-5 w-5" />}
-              isChild
-            />
-          </div>
-
-          {/* 活动管理 */}
-          <div className="pt-4">
-            <div className="text-sm font-medium text-muted-foreground mb-2">活动管理</div>
-            <NavItem
-              href="/dashboard/activities"
-              title="活动管理"
-              icon={<Calendar className="h-5 w-5" />}
-              isChild
-            />
-          </div>
-
-          {/* 报名管理 */}
-          <div className="pt-4">
-            <div className="text-sm font-medium text-muted-foreground mb-2">报名管理</div>
-            <NavItem
-              href="/dashboard/registrations"
-              title="报名审核"
-              icon={<ClipboardCheck className="h-5 w-5" />}
-              isChild
-            />
-            <NavItem
-              href="/dashboard/analytics"
-              title="数据分析"
-              icon={<BarChart3 className="h-5 w-5" />}
-              isChild
-            />
-          </div>
+          ))}
         </nav>
 
         <div className="mt-auto pt-4">

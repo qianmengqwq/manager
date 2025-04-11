@@ -1,29 +1,29 @@
+import type { Activity } from '@/components/modules/activity/activityType'
 import { DataTable } from '@/components/data-table/data-table'
+import {
+  useActivityDetailModal,
+  useApproveActivityModal,
+  useArchiveActivityModal,
+  useCreateActivityModal,
+  useDeleteActivityModal,
+  useRejectActivityModal,
+  useWithdrawActivityModal,
+} from '@/components/modules/activity/ActivityModals'
+import { fetchActivities } from '@/components/modules/activity/ActivityService'
+import { useColumns } from '@/components/modules/activity/columns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router'
 import { PlusCircle, Search } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useColumns } from '@/components/modules/activity/columns'
-import { 
-  useActivityDetailModal, 
-  useCreateActivityModal, 
-  useArchiveActivityModal,
-  useDeleteActivityModal,
-  useApproveActivityModal,
-  useRejectActivityModal,
-  useWithdrawActivityModal
-} from '@/components/modules/activity/ActivityModals'
-import { fetchActivities } from '@/components/modules/activity/ActivityService'
 import useSWR from 'swr'
-import type { Activity } from '@/components/modules/activity/activityType'
 
 function ActivitiesPage() {
   // 检查是否有子路由激活
   const matches = useMatches()
   const isDetailRouteActive = matches.some(
-    match => match.routeId.includes('$activityId')
+    match => match.routeId.includes('$activityId'),
   )
 
   // 如果子路由激活，则渲染子路由内容
@@ -38,7 +38,7 @@ function ActivitiesPage() {
 // 原本的活动列表组件
 function ActivitiesList() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [page, setPage] = useState(1) 
+  const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
   // 使用SWR获取活动数据
@@ -60,8 +60,8 @@ function ActivitiesList() {
       revalidateOnFocus: false,
       onError: (error) => {
         console.error('获取活动数据失败:', error)
-      }
-    }
+      },
+    },
   )
 
   // 初始化各种模态框
@@ -115,7 +115,7 @@ function ActivitiesList() {
     showDeleteActivity: onDeleteActivity,
     showApproveActivity: onApproveActivity,
     showRejectActivity: onRejectActivity,
-    showWithdrawActivity: onWithdrawActivity
+    showWithdrawActivity: onWithdrawActivity,
   })
 
   // 初始化表格
@@ -130,9 +130,9 @@ function ActivitiesList() {
       setPageSize(newPageSize)
     },
     initialState: {
-      pagination: { 
-        pageSize: pageSize, 
-        pageIndex: page - 1 
+      pagination: {
+        pageSize,
+        pageIndex: page - 1,
       },
     },
   })
@@ -175,4 +175,4 @@ function ActivitiesList() {
 
 export const Route = createFileRoute('/dashboard/activities')({
   component: ActivitiesPage,
-}) 
+})

@@ -48,7 +48,7 @@ export function getOperationType(event: string): string {
   const methodMatch = event.match(/\.([^.(]+)\(/)
   if (methodMatch && methodMatch[1]) {
     const method = methodMatch[1]
-    
+
     // 根据方法名推断操作类型
     if (method.startsWith('get') || method.includes('query') || method.includes('select'))
       return '查询'
@@ -70,10 +70,13 @@ export function getOperationType(event: string): string {
       return '导出'
     if (method.includes('secondaryVerify'))
       return '二次验证'
-    
+    if (method.includes('goFile'))
+      return '归档'
+    if (method.includes('check'))
+      return '审核'
     return method
   }
-  
+
   return '其他'
 }
 
@@ -87,18 +90,19 @@ export function getEventMessage(event: string): string {
       if (resultJson.msg) {
         return resultJson.msg
       }
-    } catch (e) {
+    }
+    catch (e) {
       // 解析JSON失败，忽略错误
     }
   }
-  
+
   // 提取方法名作为消息
   const methodMatch = event.match(/\.([^.(]+)\(/)
   if (methodMatch && methodMatch[1]) {
     // 将驼峰命名转换为空格分隔的可读文本
     return methodMatch[1].replace(/([A-Z])/g, ' $1').trim()
   }
-  
+
   // 如果都提取不到，返回截断的事件内容
   return event.length > 80 ? `${event.substring(0, 80)}...` : event
 }
@@ -106,4 +110,4 @@ export function getEventMessage(event: string): string {
 // 提取事件详情
 export function getEventDetails(event: string): string {
   return event
-} 
+}

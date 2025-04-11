@@ -1,4 +1,5 @@
 import type { Activity, CreateActivityRequest, UpdateActivityRequest } from './activityType'
+import { MilkdownPreview } from '@/components/milkdown'
 import { MultiImageUpload } from '@/components/modules/image'
 import { ImageGrid } from '@/components/modules/image/ImagePreview'
 import { Badge } from '@/components/ui/badge'
@@ -17,7 +18,6 @@ import toast from 'react-hot-toast'
 import { z } from 'zod'
 import { archiveActivity, checkActivity, createActivity, deleteActivity, updateActivity } from './ActivityService'
 import { formatDateTime, getStatusColor, getStatusText } from './activityType'
-import { MilkdownPreview } from '@/components/milkdown'
 
 // 表单验证Schema
 const activityFormSchema = z.object({
