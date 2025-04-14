@@ -1,10 +1,9 @@
 import type { ApiResponse } from '@/types/api'
 import type { UserFromResponse, UserZustand } from '@/types/user'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useCaptcha } from '@/hooks/use-captcha'
 import { useUserStore } from '@/store/user'
@@ -173,6 +172,7 @@ async function handleLoginSuccess(result: ApiResponse<UserFromResponse>, login: 
         userid: result.result.userid,
         account: result.result.account,
         username: result.result.username,
+        password: result.result.password,
         email: result.result.email,
         level: result.result.level,
         profilepicture: result.result.profilepicture,
@@ -190,6 +190,7 @@ async function handleLoginSuccess(result: ApiResponse<UserFromResponse>, login: 
         userid: result.result.userid,
         username: result.result.username,
         account: result.result.account,
+        password: result.result.password,
         email: result.result.email,
         level: result.result.level,
         profilepicture: result.result.profilepicture,
@@ -211,6 +212,7 @@ async function handleLoginSuccess(result: ApiResponse<UserFromResponse>, login: 
       userid: result.result.userid,
       username: result.result.username,
       account: result.result.account,
+      password: result.result.password,
       email: result.result.email,
       level: result.result.level,
       profilepicture: result.result.profilepicture,

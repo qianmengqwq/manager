@@ -495,6 +495,7 @@ export function useProfileModal() {
 export function useSettingsModal() {
   const { present } = useModalStack()
   const currentUser = useUserStore(state => state.currentUser)
+  const showVerifyModal = useSecondaryVerifyModal()
 
   return useCallback(() => {
     if (!currentUser) {
@@ -504,30 +505,60 @@ export function useSettingsModal() {
 
     present({
       title: '设置',
-      content: () => {
+      content: (props) => {
         const [isSubmitting, setIsSubmitting] = useState(false)
         const [formData, setFormData] = useState({
           email: currentUser.email || '',
           account: currentUser.account || '',
-          password: '',
+          password: '', // 密码默认为空字符串
         })
 
         const handleSubmit = async (e: React.FormEvent) => {
           e.preventDefault()
           setIsSubmitting(true)
           try {
-            await updateUser({
-              ...formData,
-              userid: currentUser.userid,
-              username: currentUser.username,
-              level: currentUser.level,
-            })
-            toast.success('设置已更新')
-            present({ title: '', content: () => null })
-          }
-          catch (error) {
-            console.error('更新设置失败:', error)
-            toast.error('更新设置失败')
+            // 更新设置操作封装，会在二级验证成功后执行
+            const performUpdateSettings = async () => {
+              try {
+                // 处理密码: 如果为空字符串也传递空字符串
+                const userData = {
+                  ...formData,
+                  userid: currentUser.userid,
+                  username: currentUser.username,
+                  level: currentUser.level,
+                  // 保持password为字符串类型
+                  password: formData.password.trim() === '' ? '' : formData.password,
+                }
+
+                await updateUser(userData)
+                toast.success('设置已更新')
+                props.dismiss()
+              }
+              catch (error) {
+                setIsSubmitting(false)
+                if (error instanceof Error) {
+                  toast.error(error.message)
+                }
+                else {
+                  toast.error('更新设置失败')
+                }
+                throw error // 抛出错误，让上层知道操作失败
+              }
+            }
+
+            try {
+              // 尝试直接更新设置
+              await performUpdateSettings()
+            }
+            catch (error) {
+              // 检查是否需要二级验证
+              const errorMessage = error instanceof Error ? error.message : '未知错误'
+              if (errorMessage.includes('二级验证') || (error as any)?.code === 1001) {
+                // 需要二级验证，显示验证模态框
+                await showVerifyModal(performUpdateSettings)
+              }
+              // 其他错误已在 performUpdateSettings 中处理
+            }
           }
           finally {
             setIsSubmitting(false)
@@ -569,13 +600,13 @@ export function useSettingsModal() {
                 type="text"
                 value={formData.password}
                 onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="请输入密码"
+                placeholder="请输入密码（不填则不修改）"
               />
             </div>
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => present({ title: '', content: () => null })}
+                onClick={() => props.dismiss()}
               >
                 取消
               </Button>
@@ -587,5 +618,5 @@ export function useSettingsModal() {
         )
       },
     })
-  }, [present, currentUser])
+  }, [present, currentUser, showVerifyModal])
 }
