@@ -16,7 +16,8 @@ import { Input } from '@/components/ui/input'
 import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router'
 import { PlusCircle, Search } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { parseAsInteger, useQueryState } from 'nuqs'
+import { use, useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import useSWR from 'swr'
 
 function ActivitiesPage() {
@@ -37,9 +38,29 @@ function ActivitiesPage() {
 
 // 原本的活动列表组件
 function ActivitiesList() {
+  const [_isPending, startTransition] = useTransition()
   const [searchTerm, setSearchTerm] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+
+  async function setTotalActivities() {
+    await fetchActivities(1, 100, {}).then((res) => {
+      setTotal(res.data.length)
+    })
+  }
+
+  useEffect(() => {
+    setTotalActivities()
+  }, [])
+
+  // 使用 nuqs 管理分页状态
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [pageSize, setPageSize] = useQueryState('pageSize', parseAsInteger.withDefault(10))
+
+  // 分页设置
+  const pagination = useMemo(() => ({
+    pageIndex: page - 1, // 转换为 0-based 索引
+    pageSize,
+  }), [page, pageSize])
 
   // 使用SWR获取活动数据
   const { data: activitiesData, mutate: refreshActivities } = useSWR(
@@ -122,19 +143,29 @@ function ActivitiesList() {
   const { table } = useDataTable({
     data: activitiesData?.data || [],
     columns,
-    pageCount: activitiesData?.pageTotal || 1,
-    manualPagination: true,
+    pageCount: Math.ceil(total / pageSize),
     getRowId: row => row.activityid.toString(),
-    onPaginationChange: ({ pageIndex, pageSize: newPageSize }) => {
-      setPage(pageIndex + 1)
-      setPageSize(newPageSize)
-    },
     initialState: {
-      pagination: {
-        pageSize,
-        pageIndex: page - 1,
-      },
+      pagination,
     },
+    onPaginationChange: (updater) => {
+      startTransition(() => {
+        if (typeof updater === 'function') {
+          const newPagination = updater(pagination)
+          setPage(newPagination.pageIndex + 1)
+          setPageSize(newPagination.pageSize)
+        }
+        else {
+          setPage(updater.pageIndex + 1)
+          setPageSize(updater.pageSize)
+        }
+        // 触发数据重新获取
+        refreshActivities()
+      })
+    },
+    shallow: false, // 禁用浅层更新，确保每次分页变化都会触发网络请求
+    throttleMs: 50, // 控制 URL 更新的频率
+    startTransition, // 使用 startTransition 来处理状态更新
   })
 
   // 搜索词改变时处理
@@ -165,10 +196,13 @@ function ActivitiesList() {
         </div>
       </div>
 
-      <DataTable
-        table={table}
-        isLoading={!activitiesData}
-      />
+      {!activitiesData ? (
+        <div className="py-8 text-center">加载中...</div>
+      ) : (
+        <DataTable
+          table={table}
+        />
+      )}
     </div>
   )
 }

@@ -120,8 +120,7 @@ function ActivitySignupPage() {
   const onArchiveActivity = useCallback(() => {
     if (activityData) {
       showArchiveActivity(activityData, () => {
-        // 归档成功后重定向回报名列表页面
-        navigate({ to: '/dashboard/signup' })
+        refreshSignups()
       })
     }
   }, [showArchiveActivity, activityData, navigate])

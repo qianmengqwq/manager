@@ -35,11 +35,11 @@ function NavItem({ href, title, icon, isChild = false }: NavItemProps) {
 
 const navigation = [
   { name: '概览', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+  { name: '用户管理', href: '/dashboard/users', icon: <Users className="h-5 w-5" /> },
+  { name: '日志记录', href: '/dashboard/logs', icon: <History className="h-5 w-5" /> },
+  { name: '学院管理', href: '/dashboard/college', icon: <BookOpen className="h-5 w-5" /> },
   { name: '活动管理', href: '/dashboard/activities', icon: <CalendarClock className="h-5 w-5" /> },
   { name: '报名管理', href: '/dashboard/signup', icon: <ClipboardCheck className="h-5 w-5" /> },
-  { name: '日志记录', href: '/dashboard/logs', icon: <History className="h-5 w-5" /> },
-  { name: '用户管理', href: '/dashboard/users', icon: <Users className="h-5 w-5" /> },
-  { name: '学院管理', href: '/dashboard/college', icon: <BookOpen className="h-5 w-5" /> },
 ]
 
 export function DashboardLayout() {
