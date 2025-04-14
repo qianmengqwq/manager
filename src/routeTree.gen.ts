@@ -19,9 +19,9 @@ import { Route as DashboardUsersImport } from './routes/dashboard/users'
 import { Route as DashboardSignupImport } from './routes/dashboard/signup'
 import { Route as DashboardLogsImport } from './routes/dashboard/logs'
 import { Route as DashboardCollegeImport } from './routes/dashboard/college'
-import { Route as DashboardAnalyticsImport } from './routes/dashboard/analytics'
 import { Route as DashboardActivitiesImport } from './routes/dashboard/activities'
 import { Route as DashboardSignupActivityIdImport } from './routes/dashboard/signup.$activityId'
+import { Route as DashboardAnalyticsActivityIdImport } from './routes/dashboard/analytics.$activityId'
 import { Route as DashboardActivitiesActivityIdImport } from './routes/dashboard/activities.$activityId'
 
 // Create/Update Routes
@@ -74,12 +74,6 @@ const DashboardCollegeRoute = DashboardCollegeImport.update({
   getParentRoute: () => DashboardRoute,
 } as any)
 
-const DashboardAnalyticsRoute = DashboardAnalyticsImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => DashboardRoute,
-} as any)
-
 const DashboardActivitiesRoute = DashboardActivitiesImport.update({
   id: '/activities',
   path: '/activities',
@@ -91,6 +85,13 @@ const DashboardSignupActivityIdRoute = DashboardSignupActivityIdImport.update({
   path: '/$activityId',
   getParentRoute: () => DashboardSignupRoute,
 } as any)
+
+const DashboardAnalyticsActivityIdRoute =
+  DashboardAnalyticsActivityIdImport.update({
+    id: '/analytics/$activityId',
+    path: '/analytics/$activityId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 const DashboardActivitiesActivityIdRoute =
   DashboardActivitiesActivityIdImport.update({
@@ -129,13 +130,6 @@ declare module '@tanstack/react-router' {
       path: '/activities'
       fullPath: '/dashboard/activities'
       preLoaderRoute: typeof DashboardActivitiesImport
-      parentRoute: typeof DashboardImport
-    }
-    '/dashboard/analytics': {
-      id: '/dashboard/analytics'
-      path: '/analytics'
-      fullPath: '/dashboard/analytics'
-      preLoaderRoute: typeof DashboardAnalyticsImport
       parentRoute: typeof DashboardImport
     }
     '/dashboard/college': {
@@ -180,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardActivitiesActivityIdImport
       parentRoute: typeof DashboardActivitiesImport
     }
+    '/dashboard/analytics/$activityId': {
+      id: '/dashboard/analytics/$activityId'
+      path: '/analytics/$activityId'
+      fullPath: '/dashboard/analytics/$activityId'
+      preLoaderRoute: typeof DashboardAnalyticsActivityIdImport
+      parentRoute: typeof DashboardImport
+    }
     '/dashboard/signup/$activityId': {
       id: '/dashboard/signup/$activityId'
       path: '/$activityId'
@@ -217,22 +218,22 @@ const DashboardSignupRouteWithChildren = DashboardSignupRoute._addFileChildren(
 
 interface DashboardRouteChildren {
   DashboardActivitiesRoute: typeof DashboardActivitiesRouteWithChildren
-  DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardCollegeRoute: typeof DashboardCollegeRoute
   DashboardLogsRoute: typeof DashboardLogsRoute
   DashboardSignupRoute: typeof DashboardSignupRouteWithChildren
   DashboardUsersRoute: typeof DashboardUsersRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardAnalyticsActivityIdRoute: typeof DashboardAnalyticsActivityIdRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardActivitiesRoute: DashboardActivitiesRouteWithChildren,
-  DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardCollegeRoute: DashboardCollegeRoute,
   DashboardLogsRoute: DashboardLogsRoute,
   DashboardSignupRoute: DashboardSignupRouteWithChildren,
   DashboardUsersRoute: DashboardUsersRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardAnalyticsActivityIdRoute: DashboardAnalyticsActivityIdRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -244,13 +245,13 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard/activities': typeof DashboardActivitiesRouteWithChildren
-  '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/college': typeof DashboardCollegeRoute
   '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/signup': typeof DashboardSignupRouteWithChildren
   '/dashboard/users': typeof DashboardUsersRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/activities/$activityId': typeof DashboardActivitiesActivityIdRoute
+  '/dashboard/analytics/$activityId': typeof DashboardAnalyticsActivityIdRoute
   '/dashboard/signup/$activityId': typeof DashboardSignupActivityIdRoute
 }
 
@@ -258,13 +259,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard/activities': typeof DashboardActivitiesRouteWithChildren
-  '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/college': typeof DashboardCollegeRoute
   '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/signup': typeof DashboardSignupRouteWithChildren
   '/dashboard/users': typeof DashboardUsersRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/activities/$activityId': typeof DashboardActivitiesActivityIdRoute
+  '/dashboard/analytics/$activityId': typeof DashboardAnalyticsActivityIdRoute
   '/dashboard/signup/$activityId': typeof DashboardSignupActivityIdRoute
 }
 
@@ -274,13 +275,13 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard/activities': typeof DashboardActivitiesRouteWithChildren
-  '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/college': typeof DashboardCollegeRoute
   '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/signup': typeof DashboardSignupRouteWithChildren
   '/dashboard/users': typeof DashboardUsersRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/activities/$activityId': typeof DashboardActivitiesActivityIdRoute
+  '/dashboard/analytics/$activityId': typeof DashboardAnalyticsActivityIdRoute
   '/dashboard/signup/$activityId': typeof DashboardSignupActivityIdRoute
 }
 
@@ -291,26 +292,26 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/dashboard/activities'
-    | '/dashboard/analytics'
     | '/dashboard/college'
     | '/dashboard/logs'
     | '/dashboard/signup'
     | '/dashboard/users'
     | '/dashboard/'
     | '/dashboard/activities/$activityId'
+    | '/dashboard/analytics/$activityId'
     | '/dashboard/signup/$activityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/dashboard/activities'
-    | '/dashboard/analytics'
     | '/dashboard/college'
     | '/dashboard/logs'
     | '/dashboard/signup'
     | '/dashboard/users'
     | '/dashboard'
     | '/dashboard/activities/$activityId'
+    | '/dashboard/analytics/$activityId'
     | '/dashboard/signup/$activityId'
   id:
     | '__root__'
@@ -318,13 +319,13 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/dashboard/activities'
-    | '/dashboard/analytics'
     | '/dashboard/college'
     | '/dashboard/logs'
     | '/dashboard/signup'
     | '/dashboard/users'
     | '/dashboard/'
     | '/dashboard/activities/$activityId'
+    | '/dashboard/analytics/$activityId'
     | '/dashboard/signup/$activityId'
   fileRoutesById: FileRoutesById
 }
@@ -363,12 +364,12 @@ export const routeTree = rootRoute
       "filePath": "dashboard.tsx",
       "children": [
         "/dashboard/activities",
-        "/dashboard/analytics",
         "/dashboard/college",
         "/dashboard/logs",
         "/dashboard/signup",
         "/dashboard/users",
-        "/dashboard/"
+        "/dashboard/",
+        "/dashboard/analytics/$activityId"
       ]
     },
     "/login": {
@@ -380,10 +381,6 @@ export const routeTree = rootRoute
       "children": [
         "/dashboard/activities/$activityId"
       ]
-    },
-    "/dashboard/analytics": {
-      "filePath": "dashboard/analytics.tsx",
-      "parent": "/dashboard"
     },
     "/dashboard/college": {
       "filePath": "dashboard/college.tsx",
@@ -411,6 +408,10 @@ export const routeTree = rootRoute
     "/dashboard/activities/$activityId": {
       "filePath": "dashboard/activities.$activityId.tsx",
       "parent": "/dashboard/activities"
+    },
+    "/dashboard/analytics/$activityId": {
+      "filePath": "dashboard/analytics.$activityId.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/signup/$activityId": {
       "filePath": "dashboard/signup.$activityId.tsx",

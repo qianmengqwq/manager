@@ -1,12 +1,12 @@
 import type { Activity } from '@/components/modules/activity/activityType'
 import { useActivityDetailModal } from '@/components/modules/activity/ActivityModals'
-import { fetchActivities } from '@/components/modules/signup/SignupService'
+import { fetchActivities, fetchActivityAnalysis } from '@/components/modules/signup/SignupService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
 import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router'
-import { CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock, Eye, Search, Users } from 'lucide-react'
+import { BarChart, CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock, Eye, Search, Users } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import toast from 'react-hot-toast'
@@ -134,6 +134,11 @@ function SignupList() {
     })
   }, [setPage])
 
+  // 获取活动分析数据
+  const onGetAnalysis = useCallback((activity: Activity) => {
+    navigate({ to: '/dashboard/analytics/$activityId', params: { activityId: activity.activityid.toString() } })
+  }, [navigate])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -224,6 +229,17 @@ function SignupList() {
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     活动详情
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation() // 阻止事件冒泡，防止触发卡片点击
+                      onGetAnalysis(activity)
+                    }}
+                  >
+                    <BarChart className="mr-2 h-4 w-4" />
+                    数据分析
                   </Button>
                   <Button variant="default" className="flex-1">
                     查看报名情况

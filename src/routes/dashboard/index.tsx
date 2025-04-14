@@ -1,49 +1,41 @@
+import type { Activity } from '@/components/modules/activity/activityType'
+import { fetchColleges } from '@/components/modules/college'
+import { fetchActivities, fetchActivitySignups } from '@/components/modules/signup/SignupService'
+import { fetchUserDetail } from '@/components/modules/user/UserService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { BarChart2, BookOpen, CalendarDays, School, User, Users } from 'lucide-react'
+import useSWR from 'swr'
 
 export const Route = createFileRoute('/dashboard/')({
   component: DashboardPage,
 })
 
 // 系统概览数据
-const systemOverview = {
-  userCount: 120,
-  departmentCount: 15,
-  collegeCount: 5,
-  activityCount: 28,
-  registrationCount: 1250,
+function useSystemOverview() {
+  const { data: colleges } = useSWR('colleges', () => fetchColleges())
+  const { data: activities } = useSWR('activities', () => fetchActivities(1, 100))
+  const { data: signups } = useSWR('signups', () => fetchActivitySignups({ page: 1, PageSize: 100 }))
+
+  return {
+    collegeCount: colleges?.total || 0,
+    activityCount: activities?.total || 0,
+    registrationCount: signups?.total || 0,
+  }
 }
 
 // 最近活动数据
-const recentActivities = [
-  {
-    id: '1',
-    title: '迎新晚会',
-    status: 'published',
-    date: '2023-09-01',
-    registrations: 120,
-  },
-  {
-    id: '2',
-    title: '校园歌手大赛',
-    status: 'draft',
-    date: '2023-10-15',
-    registrations: 85,
-  },
-  {
-    id: '3',
-    title: '职业生涯规划讲座',
-    status: 'ended',
-    date: '2023-05-20',
-    registrations: 200,
-  },
-]
+function useRecentActivities() {
+  const { data: activities } = useSWR('recent-activities', () => fetchActivities(1, 3))
+
+  return activities?.data || []
+}
 
 export function DashboardPage() {
   const navigate = useNavigate()
+  const { collegeCount, activityCount, registrationCount } = useSystemOverview()
+  const recentActivities = useRecentActivities()
 
   return (
     <div className="space-y-6">
@@ -52,42 +44,16 @@ export function DashboardPage() {
       </div>
 
       {/* 数据卡片 */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => navigate({ to: '/dashboard/users' })}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">用户总数</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemOverview.userCount}</div>
-            <p className="text-xs text-muted-foreground">
-              系统用户数量
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => navigate({ to: '/dashboard/departments' })}>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => navigate({ to: '/dashboard/college' })}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">学院总数</CardTitle>
             <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemOverview.collegeCount}</div>
+            <div className="text-2xl font-bold">{collegeCount}</div>
             <p className="text-xs text-muted-foreground">
               学院数量
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => navigate({ to: '/dashboard/departments' })}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">系部总数</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemOverview.departmentCount}</div>
-            <p className="text-xs text-muted-foreground">
-              系部数量
             </p>
           </CardContent>
         </Card>
@@ -98,20 +64,20 @@ export function DashboardPage() {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemOverview.activityCount}</div>
+            <div className="text-2xl font-bold">{activityCount}</div>
             <p className="text-xs text-muted-foreground">
               所有活动数量
             </p>
           </CardContent>
         </Card>
 
-        <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => navigate({ to: '/dashboard/registrations' })}>
+        <Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => navigate({ to: '/dashboard/signup' })}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">报名总数</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemOverview.registrationCount}</div>
+            <div className="text-2xl font-bold">{registrationCount}</div>
             <p className="text-xs text-muted-foreground">
               所有报名数量
             </p>
@@ -122,24 +88,24 @@ export function DashboardPage() {
       {/* 最近活动 */}
       <h3 className="text-lg font-semibold mt-6">最近活动</h3>
       <div className="grid gap-4 md:grid-cols-3">
-        {recentActivities.map(activity => (
+        {recentActivities.map((activity: Activity) => (
           <Card
-            key={activity.id}
+            key={activity.activityid}
             className="transition-all hover:shadow-md cursor-pointer"
-            onClick={() => navigate({ to: `/dashboard/activities/${activity.id}` })}
+            onClick={() => navigate({ to: `/dashboard/activities/${activity.activityid}` })}
           >
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{activity.title}</CardTitle>
+              <CardTitle className="text-base">{activity.activityname}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>
                   日期:
-                  {activity.date}
+                  {activity.holdtime}
                 </span>
                 <span>
                   报名:
-                  {activity.registrations}
+                  {activity.totalnumber || 0}
                 </span>
               </div>
               <div className="mt-4">

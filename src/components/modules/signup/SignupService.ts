@@ -146,3 +146,99 @@ export async function checkActivitySignup(applyId: number, isCheck: number) {
     throw error
   }
 }
+
+// 自动筛选报名
+export async function autoFilterSignups(
+  activityId: number,
+  conditions: Record<string, { value: string | null, priority: number }>,
+) {
+  try {
+    // 将条件按优先级排序
+    const sortedConditions = Object.entries(conditions)
+      .sort((a, b) => a[1].priority - b[1].priority)
+      .reduce((acc, [key, { value }]) => {
+        acc[key] = value || null
+        return acc
+      }, {} as Record<string, string | null>)
+
+    const response = await fetch('/api/activity/filter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        activityid: activityId,
+        conditions: sortedConditions,
+      }),
+    })
+
+    if (!response.ok)
+      throw new Error('自动筛选失败')
+
+    const data = await response.json() as ApiResponse<any>
+    console.log({ 自动筛选响应: data })
+
+    if (data.code !== 1000)
+      throw new Error(data.msg || '自动筛选失败')
+
+    return data.result
+  }
+  catch (error) {
+    console.error({ 自动筛选错误: error })
+    throw error
+  }
+}
+
+// 发送邮件通知
+export async function sendEmailNotification(activityId: number) {
+  try {
+    const response = await fetch(`/api/activity/sendemailtostudent?activityid=${activityId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok)
+      throw new Error('发送邮件通知失败')
+
+    const data = await response.json() as ApiResponse<any>
+    console.log({ 发送邮件通知响应: data })
+
+    if (data.code !== 1000)
+      throw new Error(data.msg || '发送邮件通知失败')
+
+    return data.result
+  }
+  catch (error) {
+    console.error({ 发送邮件通知错误: error })
+    throw error
+  }
+}
+
+// 获取活动分析数据
+export async function fetchActivityAnalysis(activityId: number) {
+  try {
+    const response = await fetch(`/api/activity/getanalysis?activityid=${activityId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok)
+      throw new Error('获取活动分析数据失败')
+
+    const data = await response.json() as ApiResponse<any>
+    console.log({ 活动分析数据响应: data })
+
+    if (data.code !== 1000)
+      throw new Error(data.msg || '获取活动分析数据失败')
+
+    return data.result
+  }
+  catch (error) {
+    console.error({ 获取活动分析数据错误: error })
+    throw error
+  }
+}

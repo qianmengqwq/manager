@@ -83,7 +83,7 @@ function LogsPage() {
     if (!logs.length)
       return []
 
-    const modules = ['活动管理', '用户管理', '报名管理']
+    const modules = ['活动管理', '用户管理', '报名管理', '院系信息']
     return modules.sort()
   }, [logs])
 

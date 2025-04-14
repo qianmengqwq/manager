@@ -6,10 +6,11 @@ import { fetchActivities } from '@/components/modules/activity/ActivityService'
 import { useColumns } from '@/components/modules/signup/columns'
 import {
   useApproveSignupModal,
+  useAutoFilterModal,
   useRejectSignupModal,
   useSignupDetailModal,
 } from '@/components/modules/signup/SignupModals'
-import { fetchActivitySignups } from '@/components/modules/signup/SignupService'
+import { autoFilterSignups, fetchActivitySignups, sendEmailNotification } from '@/components/modules/signup/SignupService'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,8 +22,9 @@ import {
 } from '@/components/ui/select'
 import { useDataTable } from '@/hooks/use-data-table'
 import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
-import { Archive, ArrowLeft, Search } from 'lucide-react'
+import { Archive, ArrowLeft, Filter, Mail, Search } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import toast from 'react-hot-toast'
 import useSWR from 'swr'
 
 function ActivitySignupPage() {
@@ -62,6 +64,7 @@ function ActivitySignupPage() {
   const showApproveSignup = useApproveSignupModal()
   const showRejectSignup = useRejectSignupModal()
   const showArchiveActivity = useArchiveActivityModal()
+  const showAutoFilter = useAutoFilterModal()
 
   // 报名数据
   const { data: signupsData, mutate: refreshSignups } = useSWR(
@@ -123,6 +126,27 @@ function ActivitySignupPage() {
     }
   }, [showArchiveActivity, activityData, navigate])
 
+  // 自动筛选处理函数
+  const handleAutoFilter = useCallback(() => {
+    console.log('自动筛选')
+    if (!activityData)
+      return
+
+    showAutoFilter(activityId, refreshSignups)
+  }, [activityId, showAutoFilter, refreshSignups, activityData])
+
+  // 发送邮件通知回调
+  const onSendEmailNotification = useCallback(async () => {
+    try {
+      await sendEmailNotification(activityId)
+      toast.success('邮件通知发送成功')
+    }
+    catch (error) {
+      toast.error('邮件通知发送失败')
+      console.error({ 发送邮件通知错误: error })
+    }
+  }, [activityId])
+
   // 定义表格列
   const columns = useColumns({
     showSignupDetail,
@@ -177,16 +201,35 @@ function ActivitySignupPage() {
           </h2>
         </div>
 
-        {canArchive && (
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={onArchiveActivity}
-            className="ml-auto"
+            onClick={handleAutoFilter}
+            className="flex items-center gap-2"
           >
-            <Archive className="mr-2 h-4 w-4" />
-            归档活动
+            <Filter className="h-4 w-4" />
+            自动筛选
           </Button>
-        )}
+
+          <Button
+            variant="outline"
+            onClick={onSendEmailNotification}
+            className="flex items-center gap-2"
+          >
+            <Mail className="h-4 w-4" />
+            发送邮件通知
+          </Button>
+
+          {canArchive && (
+            <Button
+              variant="outline"
+              onClick={onArchiveActivity}
+            >
+              <Archive className="mr-2 h-4 w-4" />
+              归档活动
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
