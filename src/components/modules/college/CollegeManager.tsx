@@ -43,6 +43,7 @@ export default function CollegeManager() {
   const {
     data: colleges = [],
     isLoading: isLoadingColleges,
+    mutate,
   } = useSWR(
     'colleges',
     () => fetchColleges()
@@ -80,10 +81,13 @@ export default function CollegeManager() {
 
   // 根据搜索条件筛选学院和专业
   const filteredColleges = useMemo(() => {
-    if (!searchTerm.trim())
-      return colleges
+    // 确保colleges是数组
+    const collegeList = Array.isArray(colleges) ? colleges : []
 
-    return colleges.filter(college =>
+    if (!searchTerm.trim())
+      return collegeList
+
+    return collegeList.filter(college =>
       college.collegename.toLowerCase().includes(searchTerm.toLowerCase())
       || (majorsByCollege[college.collegeid] || []).some(major =>
         major.majorname.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -161,10 +165,15 @@ export default function CollegeManager() {
             {searchTerm ? '没有找到符合条件的学院或专业' : '您可以添加第一个学院，然后为其创建专业，建立完整的院系结构。'}
           </p>
           {!searchTerm && (
-            <Button onClick={showAddCollegeModal} variant="default">
-              <PlusIcon className="mr-2 h-4 w-4" />
-              添加第一个学院
-            </Button>
+            <div className='flex items-center justify-center gap-4'>
+              <Button onClick={showAddCollegeModal} variant="default">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                添加第一个学院
+              </Button>
+              <Button onClick={() => mutate()}>
+                已有学院？尝试再次获取一下数据
+              </Button>
+            </div>
           )}
         </div>
       ) : (
@@ -172,7 +181,7 @@ export default function CollegeManager() {
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="overflow-y-auto pr-2 pb-4 max-h-[800px]">
             <div className="grid gap-6">
-              {filteredColleges?.map((college) => {
+              {filteredColleges.map((college) => {
                 const majors = majorsByCollege[college.collegeid] || []
                 const isExpanded = expandedColleges.includes(college.collegeid)
 
