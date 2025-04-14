@@ -509,7 +509,7 @@ export function useSettingsModal() {
         const [formData, setFormData] = useState({
           email: currentUser.email || '',
           account: currentUser.account || '',
-          password: currentUser.password || '',
+          password: '',
         })
 
         const handleSubmit = async (e: React.FormEvent) => {

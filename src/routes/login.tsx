@@ -31,6 +31,15 @@ const loginFormSchema = z.object({
 // 表单值类型
 type LoginFormValues = z.infer<typeof loginFormSchema>
 
+// 邮箱登录表单验证Schema
+const emailLoginFormSchema = z.object({
+  email: z.string().email('请输入有效的邮箱地址'),
+  code: z.string().min(4, '验证码不能为空'),
+})
+
+// 邮箱登录表单值类型
+type EmailLoginFormValues = z.infer<typeof emailLoginFormSchema>
+
 // 登录API请求
 async function loginFetcher(url: string, { arg }: { arg: LoginFormValues }) {
   const response = await fetch(`/api${url}`, {
@@ -66,23 +75,188 @@ async function loginFetcher(url: string, { arg }: { arg: LoginFormValues }) {
   }
 }
 
+// 邮箱登录API请求
+async function emailLoginFetcher(url: string, { arg }: { arg: EmailLoginFormValues }) {
+  const response = await fetch(`/api${url}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(arg),
+  })
+
+  // 检查是否有响应
+  const text = await response.text()
+
+  // 如果响应为空，则抛出错误
+  if (!text) {
+    throw new Error('服务器返回空响应')
+  }
+
+  try {
+    // 尝试解析JSON
+    const data = JSON.parse(text)
+
+    // 检查响应状态
+    if (!response.ok) {
+      throw new Error(data.msg || `请求失败: ${response.status}`)
+    }
+
+    return data
+  }
+  catch (e) {
+    console.error('JSON解析错误:', e, '原始响应:', text)
+    throw new Error('服务器响应格式错误')
+  }
+}
+
+// 发送邮箱验证码API请求
+async function sendEmailCodeFetcher(url: string, { arg }: { arg: { email: string } }) {
+  const response = await fetch(`/api${url}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(arg),
+  })
+
+  // 检查是否有响应
+  const text = await response.text()
+
+  // 如果响应为空，则抛出错误
+  if (!text) {
+    throw new Error('服务器返回空响应')
+  }
+
+  try {
+    // 尝试解析JSON
+    const data = JSON.parse(text)
+
+    // 检查响应状态
+    if (!response.ok) {
+      throw new Error(data.msg || `请求失败: ${response.status}`)
+    }
+
+    return data
+  }
+  catch (e) {
+    console.error('JSON解析错误:', e, '原始响应:', text)
+    throw new Error('服务器响应格式错误')
+  }
+}
+
+// 处理用户登录成功后的操作
+async function handleLoginSuccess(result: ApiResponse<UserFromResponse>, login: (user: UserZustand) => void, navigate: any) {
+  // 获取用户头像
+  try {
+    // 检查profilepicture是否存在
+    if (result.result.profilepicture) {
+      const response = await fetch(`/api/user/getuserpic?key=${result.result.profilepicture}`)
+
+      if (!response.ok) {
+        throw new Error('获取头像失败')
+      }
+
+      const imageRes = await response.json()
+
+      if (imageRes.code !== 1000) {
+        throw new Error('获取头像失败')
+      }
+
+      const imageData = imageRes.result
+      console.log('头像数据:', imageData)
+
+      const pictureUrl = `data:image/jpeg;base64,${imageData}`
+
+      // 格式化用户数据，包含picture字段
+      const userData = {
+        userid: result.result.userid,
+        account: result.result.account,
+        username: result.result.username,
+        email: result.result.email,
+        level: result.result.level,
+        profilepicture: result.result.profilepicture,
+        picture: pictureUrl, // 添加处理后的图片URL
+      }
+
+      console.log('用户数据:', userData)
+
+      // 存储用户信息到store
+      login(userData as UserZustand)
+    }
+    else {
+      // 如果没有头像，使用默认头像
+      const userData = {
+        userid: result.result.userid,
+        username: result.result.username,
+        account: result.result.account,
+        email: result.result.email,
+        level: result.result.level,
+        profilepicture: result.result.profilepicture,
+        picture: '', // 默认为空字符串
+      }
+
+      // 存储用户信息到store
+      login(userData as UserZustand)
+    }
+
+    toast.success('登录成功')
+
+    navigate({ to: '/dashboard' })
+  }
+  catch (error) {
+    console.error('获取头像错误:', error)
+    // 即使获取头像失败，也允许用户登录
+    const userData = {
+      userid: result.result.userid,
+      username: result.result.username,
+      account: result.result.account,
+      email: result.result.email,
+      level: result.result.level,
+      profilepicture: result.result.profilepicture,
+      picture: '', // 默认为空字符串
+    }
+
+    login(userData as UserZustand)
+    toast.success('登录成功，但获取头像失败')
+    navigate({ to: '/dashboard' })
+  }
+}
+
 export function LoginPage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('password')
   const { captchaImage, isLoading: isCaptchaLoading, refreshCaptcha } = useCaptcha()
   // 存储验证码图片URL
   const [captchaUrl, setCaptchaUrl] = useState<string | null>(null)
   const login = useUserStore(state => state.login)
 
+  // 邮箱验证码倒计时状态
+  const [emailCodeCountdown, setEmailCodeCountdown] = useState(0)
+
   // 使用SWR Mutation进行登录请求
   const { trigger, isMutating } = useSWRMutation('/user/logon', loginFetcher)
 
-  // 初始化表单
+  // 使用SWR Mutation进行邮箱登录请求
+  const { trigger: triggerEmailLogin, isMutating: isEmailLoginMutating } = useSWRMutation('/user/verifyemail', emailLoginFetcher)
+
+  // 使用SWR Mutation发送邮箱验证码
+  const { trigger: triggerSendEmailCode, isMutating: isSendingEmailCode } = useSWRMutation('/user/sendemail', sendEmailCodeFetcher)
+
+  // 初始化账号密码登录表单
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
       account: 'sayoriqwq',
       password: '203109Qy@',
+      code: '',
+    },
+  })
+
+  // 初始化邮箱登录表单
+  const emailForm = useForm<EmailLoginFormValues>({
+    resolver: zodResolver(emailLoginFormSchema),
+    defaultValues: {
+      email: '',
       code: '',
     },
   })
@@ -115,7 +289,19 @@ export function LoginPage() {
     }
   }, [captchaImage])
 
-  // 登录表单提交
+  // 倒计时效果
+  useEffect(() => {
+    if (emailCodeCountdown <= 0)
+      return
+
+    const timer = setInterval(() => {
+      setEmailCodeCountdown(prev => prev - 1)
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [emailCodeCountdown])
+
+  // 账号密码登录表单提交
   const onSubmit = async (values: LoginFormValues) => {
     try {
       // 打印请求数据，方便调试
@@ -125,86 +311,7 @@ export function LoginPage() {
       console.log('登录响应:', result)
 
       if (result && result.code === 1000) {
-        // 获取用户头像
-        try {
-          // 检查profilepicture是否存在
-          if (result.result.profilepicture) {
-            const response = await fetch(`/api/user/getuserpic?key=${result.result.profilepicture}`)
-
-            if (!response.ok) {
-              throw new Error('获取头像失败')
-            }
-
-            const imageRes = await response.json()
-
-            if (imageRes.code !== 1000) {
-              throw new Error('获取头像失败')
-            }
-
-            const imageData = imageRes.result
-            console.log('头像数据:', imageData)
-
-            const pictureUrl = `data:image/jpeg;base64,${imageData}`
-
-            // 格式化用户数据，包含picture字段
-            const userData = {
-              userid: result.result.userid,
-              username: result.result.username,
-              email: result.result.email,
-              level: result.result.level,
-              profilepicture: result.result.profilepicture,
-              picture: pictureUrl, // 添加处理后的图片URL
-            }
-
-            console.log('用户数据:', userData)
-
-            // 存储用户信息到store
-            login(userData as UserZustand)
-          }
-          else {
-            // 如果没有头像，使用默认头像
-            const userData = {
-              userid: result.result.userid,
-              username: result.result.username,
-              email: result.result.email,
-              level: result.result.level,
-              profilepicture: result.result.profilepicture,
-              picture: '', // 默认为空字符串
-            }
-
-            // 存储用户信息到store
-            login(userData as UserZustand)
-          }
-
-          toast.success('登录成功')
-          if (result.result.level === 1) {
-            navigate({ to: '/dashboard' })
-          }
-          else {
-            navigate({ to: '/dashboard/common' })
-          }
-        }
-        catch (error) {
-          console.error('获取头像错误:', error)
-          // 即使获取头像失败，也允许用户登录
-          const userData = {
-            userid: result.result.userid,
-            username: result.result.username,
-            email: result.result.email,
-            level: result.result.level,
-            profilepicture: result.result.profilepicture,
-            picture: '', // 默认为空字符串
-          }
-
-          login(userData as UserZustand)
-          toast.success('登录成功，但获取头像失败')
-          if (result.result.level === 1) {
-            navigate({ to: '/dashboard' })
-          }
-          else {
-            navigate({ to: '/dashboard/common' })
-          }
-        }
+        await handleLoginSuccess(result, login, navigate)
       }
       else {
         toast.error(result?.msg || '登录失败')
@@ -223,6 +330,34 @@ export function LoginPage() {
     }
   }
 
+  // 邮箱登录表单提交
+  const onEmailSubmit = async (values: EmailLoginFormValues) => {
+    try {
+      // 打印请求数据，方便调试
+      console.log('邮箱登录请求数据:', { values })
+
+      const result = await triggerEmailLogin(values) as ApiResponse<UserFromResponse>
+      console.log('邮箱登录响应:', result)
+
+      if (result && result.code === 1000) {
+        await handleLoginSuccess(result, login, navigate)
+      }
+      else {
+        toast.error(result?.msg || '登录失败')
+      }
+    }
+    catch (error) {
+      console.error('邮箱登录错误:', error)
+      if (error instanceof Error) {
+        toast.error(error.message)
+      }
+      else {
+        toast.error('登录失败')
+      }
+    }
+  }
+
+  // 获取验证码图片
   const onGetCaptcha = async () => {
     // 先清除当前验证码URL
     if (captchaUrl) {
@@ -239,8 +374,39 @@ export function LoginPage() {
     }
   }
 
-  const onTabChange = (value: string) => {
-    setActiveTab(value)
+  // 发送邮箱验证码
+  const onSendEmailCode = async () => {
+    // 如果正在倒计时，不允许再次发送
+    if (emailCodeCountdown > 0)
+      return
+
+    // 获取邮箱值并验证
+    const email = emailForm.getValues('email')
+    const emailResult = await emailForm.trigger('email')
+    if (!emailResult || !email) {
+      return
+    }
+
+    try {
+      const result = await triggerSendEmailCode({ email })
+      if (result && result.code === 1000) {
+        toast.success('验证码已发送至邮箱')
+        // 设30秒倒计时
+        setEmailCodeCountdown(30)
+      }
+      else {
+        toast.error(result?.msg || '发送验证码失败')
+      }
+    }
+    catch (error) {
+      console.error('发送邮箱验证码错误:', error)
+      if (error instanceof Error) {
+        toast.error(error.message)
+      }
+      else {
+        toast.error('发送验证码失败')
+      }
+    }
   }
 
   return (
@@ -251,7 +417,7 @@ export function LoginPage() {
           <CardDescription className="text-center">请登录您的账号以继续访问</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="password" className="w-full" onValueChange={onTabChange}>
+          <Tabs defaultValue="password" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="password">账号密码</TabsTrigger>
               <TabsTrigger value="email">邮箱登录</TabsTrigger>
@@ -356,34 +522,72 @@ export function LoginPage() {
 
             {/* 邮箱登录 */}
             <TabsContent value="email">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">邮箱</Label>
-                  <Input id="email" type="email" placeholder="请输入邮箱" className="h-10" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email-code">验证码</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input id="email-code" placeholder="请输入验证码" className="col-span-2 h-10" />
-                    <Button variant="outline" size="default" className="whitespace-nowrap h-10">
-                      获取验证码
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <Form {...emailForm}>
+                <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
+                  <FormField
+                    control={emailForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>邮箱</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="请输入邮箱"
+                            className="h-10"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={emailForm.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>验证码</FormLabel>
+                        <div className="grid grid-cols-3 gap-2">
+                          <FormControl className="col-span-2">
+                            <Input
+                              placeholder="请输入验证码"
+                              className="h-10"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-10 whitespace-nowrap text-xs px-1"
+                            onClick={onSendEmailCode}
+                            disabled={isSendingEmailCode || emailCodeCountdown > 0}
+                          >
+                            {isSendingEmailCode
+                              ? '发送中...'
+                              : emailCodeCountdown > 0
+                                ? `${emailCodeCountdown}秒后重试`
+                                : '获取验证码'}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="w-full h-10 font-medium mt-2"
+                    disabled={isEmailLoginMutating}
+                  >
+                    {isEmailLoginMutating ? '登录中...' : '登录'}
+                  </Button>
+                </form>
+              </Form>
             </TabsContent>
           </Tabs>
         </CardContent>
-        {activeTab === 'email' && (
-          <CardFooter>
-            <Button
-              className="w-full h-10 font-medium"
-              disabled={isMutating}
-            >
-              {isMutating ? '登录中...' : '登录'}
-            </Button>
-          </CardFooter>
-        )}
       </Card>
     </div>
   )

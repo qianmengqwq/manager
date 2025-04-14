@@ -42,6 +42,10 @@ export function UserDetail({ user, onAvatarUpdate }: UserDetailProps) {
           <p className="truncate">{user.profilepicture || '无'}</p>
         </div>
         <div>
+          <p className="text-sm font-medium text-muted-foreground">账号</p>
+          <p className="truncate">{user.account || '无'}</p>
+        </div>
+        <div>
           <p className="text-sm font-medium text-muted-foreground">角色</p>
           <p>{USER_ROLE_MAP[user.level as 1 | 2] || '未知角色'}</p>
         </div>
