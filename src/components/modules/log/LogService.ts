@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/types/api'
-import type { EventLogListResult } from './logType'
+import type { EventLog, EventLogListResult } from './logType'
+import { getLevelText, getOperationType } from './logType'
 
 // 获取系统事件日志
 export async function fetchEventLogs(
@@ -58,35 +59,51 @@ export async function fetchEventLogs(
   }
 }
 
-// 导出日志数据 (如果后端支持，可以实现此功能)
-export async function exportEventLogs(filter?: Record<string, any>) {
+// 导出日志数据 (前端实现)
+export async function exportEventLogs(
+  logs: EventLog[],
+  fileName = `系统日志_${new Date().toISOString().split('T')[0]}`,
+) {
   try {
-    const response = await fetch(`/api/event/exportevents`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(filter || {}),
-    })
+    // 引入必要的库
+    const XLSX = await import('xlsx')
 
-    if (!response.ok) {
-      throw new Error('导出日志失败')
-    }
+    // 准备导出数据
+    const exportData = logs.map(log => ({
+      事件ID: log.eventid,
+      时间: new Date(log.eventtime.replace(/-/g, '/')).toLocaleString('zh-CN'),
+      模块: log.module,
+      操作类型: getOperationType(log.event),
+      用户ID: log.userid,
+      用户名: log.username,
+      用户角色: getLevelText(log.level),
+      IP地址: log.ip,
+      事件内容: log.event,
+    }))
 
-    // 获取blob数据
-    const blob = await response.blob()
+    // 创建工作表
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
 
-    // 创建下载链接
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `系统日志_${new Date().toISOString().split('T')[0]}.xlsx`
-    document.body.appendChild(a)
-    a.click()
+    // 设置列宽
+    const columnWidths = [
+      { wch: 10 }, // 事件ID
+      { wch: 20 }, // 时间
+      { wch: 15 }, // 模块
+      { wch: 10 }, // 操作类型
+      { wch: 10 }, // 用户ID
+      { wch: 15 }, // 用户名
+      { wch: 10 }, // 用户角色
+      { wch: 15 }, // IP地址
+      { wch: 50 }, // 事件内容
+    ]
+    worksheet['!cols'] = columnWidths
 
-    // 清理
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+    // 创建工作簿
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, '系统日志')
+
+    // 生成Excel文件并下载
+    XLSX.writeFile(workbook, `${fileName}.xlsx`)
 
     return true
   }

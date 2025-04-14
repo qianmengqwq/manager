@@ -4,6 +4,13 @@ import { useColumns } from '@/components/modules/log/columns'
 import { useLogDetailModal } from '@/components/modules/log/LogModals'
 import { exportEventLogs, fetchEventLogs } from '@/components/modules/log/LogService'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -13,9 +20,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useDataTable } from '@/hooks/use-data-table'
+import { cn } from '@/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import { Download, Search, X } from 'lucide-react'
 import { parseAsInteger, useQueryState } from 'nuqs'
+import { useModalStack } from 'rc-modal-sheet'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import toast from 'react-hot-toast'
 import useSWR from 'swr'
@@ -27,6 +36,7 @@ function LogsPage() {
   const [levelFilter, setLevelFilter] = useState<number>(0)
 
   const showLogDetail = useLogDetailModal()
+  const { present } = useModalStack()
 
   // 使用 nuqs 管理分页状态
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
@@ -96,18 +106,6 @@ function LogsPage() {
     mutate()
   }
 
-  // 导出日志数据
-  const handleExportLogs = async () => {
-    try {
-      await exportEventLogs(filters)
-      toast.success('日志导出成功')
-    }
-    catch (error) {
-      console.error('导出日志失败:', error)
-      toast.error('导出日志失败')
-    }
-  }
-
   // 定义表格列
   const columns = useColumns({ showLogDetail })
 
@@ -120,6 +118,7 @@ function LogsPage() {
     initialState: {
       pagination,
     },
+    enableRowSelection: true, // 启用行选择功能
     onPaginationChange: (updater) => {
       startTransition(() => {
         if (typeof updater === 'function') {
@@ -140,6 +139,99 @@ function LogsPage() {
     startTransition, // 使用 startTransition 来处理状态更新
   })
 
+  // 导出当前页日志
+  const handleExportCurrentPage = async () => {
+    try {
+      await exportEventLogs(logs, `系统日志_第${page}页`)
+      toast.success(`成功导出第 ${page} 页日志`)
+    }
+    catch (error) {
+      console.error('导出当前页日志失败:', error)
+      toast.error('导出日志失败')
+    }
+  }
+
+  // 导出选中行
+  const handleExportSelected = async () => {
+    try {
+      const selectedRows = table.getSelectedRowModel().rows
+      if (selectedRows.length === 0) {
+        toast.error('请至少选择一条日志记录')
+        return
+      }
+
+      const selectedData = selectedRows.map(row => row.original)
+      await exportEventLogs(selectedData, `系统日志_已选择_${selectedData.length}条`)
+      toast.success(`成功导出 ${selectedData.length} 条选中的日志`)
+    }
+    catch (error) {
+      console.error('导出选中日志失败:', error)
+      toast.error('导出日志失败')
+    }
+  }
+
+  // 导出所有符合筛选条件的日志数据
+  const handleExportAllFilteredLogs = async () => {
+    try {
+      // 显示导出确认对话框
+      present({
+        title: '导出日志',
+        content: () => {
+          // 创建一个关闭当前模态框的函数
+          const closeModal = () => present({ title: '', content: () => null })
+
+          return (
+            <div className="py-2">
+              <p>
+                您将导出所有筛选后的日志（共
+                {totalLogs}
+                {' '}
+                条）。此操作可能需要一些时间。
+              </p>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={closeModal}>
+                  取消
+                </Button>
+                <Button
+                  onClick={async () => {
+                    closeModal()
+                    toast.loading('正在导出所有筛选后的日志...', { id: 'export-loading' })
+                    try {
+                      // 如果数据量较大，可能需要分批获取全部数据
+                      if (totalLogs > pageSize) {
+                        // 一次性获取所有符合筛选条件的数据
+                        const allData = await fetchEventLogs(1, totalLogs, filters)
+                        if (allData && allData.data) {
+                          await exportEventLogs(allData.data, `系统日志_筛选结果_${totalLogs}条`)
+                          toast.success('成功导出所有筛选后的日志', { id: 'export-loading' })
+                        }
+                      }
+                      else {
+                        // 数据量较小，直接导出当前数据
+                        await exportEventLogs(logs, `系统日志_筛选结果_${logs.length}条`)
+                        toast.success('成功导出所有筛选后的日志', { id: 'export-loading' })
+                      }
+                    }
+                    catch (error) {
+                      console.error('导出所有筛选日志失败:', error)
+                      toast.error('导出失败', { id: 'export-loading' })
+                    }
+                  }}
+                >
+                  确认导出
+                </Button>
+              </div>
+            </div>
+          )
+        },
+      })
+    }
+    catch (error) {
+      console.error('导出日志失败:', error)
+      toast.error('导出日志失败')
+    }
+  }
+
   // 双击行打开详情
   const handleRowDoubleClick = useCallback((row: EventLog) => {
     showLogDetail(row)
@@ -150,14 +242,53 @@ function LogsPage() {
     mutate()
   }, [mutate])
 
+  // 获取选中行数
+  const selectedCount = table.getSelectedRowModel().rows.length
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">系统日志</h2>
-        <Button variant="outline" onClick={handleExportLogs}>
-          <Download className="mr-2 h-4 w-4" />
-          导出日志
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              导出日志
+              {selectedCount > 0 && (
+                <span className="ml-1">
+                  (
+                  {selectedCount}
+                  )
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportCurrentPage}>
+              导出当前页 (
+              {logs.length}
+              {' '}
+              条)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleExportSelected}
+              disabled={selectedCount === 0}
+              className={selectedCount === 0 ? 'text-muted-foreground' : ''}
+            >
+              导出选中行 (
+              {selectedCount}
+              {' '}
+              条)
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleExportAllFilteredLogs}>
+              导出所有筛选结果 (
+              {totalLogs}
+              {' '}
+              条)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {isLoading && !data ? (
@@ -232,11 +363,26 @@ function LogsPage() {
               {totalLogs}
               {' '}
               条日志
+              {selectedCount > 0 && (
+                <span className="ml-2">
+                  已选择
+                  {' '}
+                  {selectedCount}
+                  {' '}
+                  条
+                </span>
+              )}
             </div>
           </div>
 
           <DataTable
-            className="max-h-[583px]"
+            className={cn(
+              'max-h-[583px]',
+              '[&_tr[data-state=selected]]:bg-blue-100',
+              '[&_tr:hover]:bg-muted/60',
+              '[&_th:first-child]:pl-4',
+              '[&_td:first-child]:pl-4',
+            )}
             table={table}
             onRowDoubleClick={handleRowDoubleClick}
           />

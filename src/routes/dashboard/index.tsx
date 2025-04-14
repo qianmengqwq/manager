@@ -128,8 +128,8 @@ export function DashboardPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground mb-4">查看更详细的报名数据分析和统计图表</p>
-          <Button onClick={() => navigate({ to: '/dashboard/analytics' })}>
-            前往数据分析
+          <Button onClick={() => navigate({ to: '/dashboard/signup' })}>
+            前往报名数据分析
           </Button>
         </CardContent>
       </Card>

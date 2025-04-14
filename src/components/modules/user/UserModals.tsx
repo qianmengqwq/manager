@@ -509,6 +509,7 @@ export function useSettingsModal() {
         const [formData, setFormData] = useState({
           email: currentUser.email || '',
           account: currentUser.account || '',
+          password: currentUser.password || '',
         })
 
         const handleSubmit = async (e: React.FormEvent) => {
@@ -520,7 +521,6 @@ export function useSettingsModal() {
               userid: currentUser.userid,
               username: currentUser.username,
               level: currentUser.level,
-              password: '', // 不修改密码
             })
             toast.success('设置已更新')
             present({ title: '', content: () => null })
@@ -558,6 +558,18 @@ export function useSettingsModal() {
                 value={formData.account}
                 onChange={e => setFormData(prev => ({ ...prev, account: e.target.value }))}
                 placeholder="请输入账号"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                密码
+              </label>
+              <Input
+                id="password"
+                type="text"
+                value={formData.password}
+                onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="请输入密码"
               />
             </div>
             <div className="flex justify-end gap-2">

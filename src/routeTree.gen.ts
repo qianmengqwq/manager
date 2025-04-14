@@ -18,6 +18,7 @@ import { Route as DashboardIndexImport } from './routes/dashboard/index'
 import { Route as DashboardUsersImport } from './routes/dashboard/users'
 import { Route as DashboardSignupImport } from './routes/dashboard/signup'
 import { Route as DashboardLogsImport } from './routes/dashboard/logs'
+import { Route as DashboardCommonImport } from './routes/dashboard/common'
 import { Route as DashboardCollegeImport } from './routes/dashboard/college'
 import { Route as DashboardActivitiesImport } from './routes/dashboard/activities'
 import { Route as DashboardSignupActivityIdImport } from './routes/dashboard/signup.$activityId'
@@ -65,6 +66,12 @@ const DashboardSignupRoute = DashboardSignupImport.update({
 const DashboardLogsRoute = DashboardLogsImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => DashboardRoute,
+} as any)
+
+const DashboardCommonRoute = DashboardCommonImport.update({
+  id: '/common',
+  path: '/common',
   getParentRoute: () => DashboardRoute,
 } as any)
 
@@ -137,6 +144,13 @@ declare module '@tanstack/react-router' {
       path: '/college'
       fullPath: '/dashboard/college'
       preLoaderRoute: typeof DashboardCollegeImport
+      parentRoute: typeof DashboardImport
+    }
+    '/dashboard/common': {
+      id: '/dashboard/common'
+      path: '/common'
+      fullPath: '/dashboard/common'
+      preLoaderRoute: typeof DashboardCommonImport
       parentRoute: typeof DashboardImport
     }
     '/dashboard/logs': {
@@ -219,6 +233,7 @@ const DashboardSignupRouteWithChildren = DashboardSignupRoute._addFileChildren(
 interface DashboardRouteChildren {
   DashboardActivitiesRoute: typeof DashboardActivitiesRouteWithChildren
   DashboardCollegeRoute: typeof DashboardCollegeRoute
+  DashboardCommonRoute: typeof DashboardCommonRoute
   DashboardLogsRoute: typeof DashboardLogsRoute
   DashboardSignupRoute: typeof DashboardSignupRouteWithChildren
   DashboardUsersRoute: typeof DashboardUsersRoute
@@ -229,6 +244,7 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardActivitiesRoute: DashboardActivitiesRouteWithChildren,
   DashboardCollegeRoute: DashboardCollegeRoute,
+  DashboardCommonRoute: DashboardCommonRoute,
   DashboardLogsRoute: DashboardLogsRoute,
   DashboardSignupRoute: DashboardSignupRouteWithChildren,
   DashboardUsersRoute: DashboardUsersRoute,
@@ -246,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/dashboard/activities': typeof DashboardActivitiesRouteWithChildren
   '/dashboard/college': typeof DashboardCollegeRoute
+  '/dashboard/common': typeof DashboardCommonRoute
   '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/signup': typeof DashboardSignupRouteWithChildren
   '/dashboard/users': typeof DashboardUsersRoute
@@ -260,6 +277,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard/activities': typeof DashboardActivitiesRouteWithChildren
   '/dashboard/college': typeof DashboardCollegeRoute
+  '/dashboard/common': typeof DashboardCommonRoute
   '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/signup': typeof DashboardSignupRouteWithChildren
   '/dashboard/users': typeof DashboardUsersRoute
@@ -276,6 +294,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/dashboard/activities': typeof DashboardActivitiesRouteWithChildren
   '/dashboard/college': typeof DashboardCollegeRoute
+  '/dashboard/common': typeof DashboardCommonRoute
   '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/signup': typeof DashboardSignupRouteWithChildren
   '/dashboard/users': typeof DashboardUsersRoute
@@ -293,6 +312,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard/activities'
     | '/dashboard/college'
+    | '/dashboard/common'
     | '/dashboard/logs'
     | '/dashboard/signup'
     | '/dashboard/users'
@@ -306,6 +326,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard/activities'
     | '/dashboard/college'
+    | '/dashboard/common'
     | '/dashboard/logs'
     | '/dashboard/signup'
     | '/dashboard/users'
@@ -320,6 +341,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard/activities'
     | '/dashboard/college'
+    | '/dashboard/common'
     | '/dashboard/logs'
     | '/dashboard/signup'
     | '/dashboard/users'
@@ -365,6 +387,7 @@ export const routeTree = rootRoute
       "children": [
         "/dashboard/activities",
         "/dashboard/college",
+        "/dashboard/common",
         "/dashboard/logs",
         "/dashboard/signup",
         "/dashboard/users",
@@ -384,6 +407,10 @@ export const routeTree = rootRoute
     },
     "/dashboard/college": {
       "filePath": "dashboard/college.tsx",
+      "parent": "/dashboard"
+    },
+    "/dashboard/common": {
+      "filePath": "dashboard/common.tsx",
       "parent": "/dashboard"
     },
     "/dashboard/logs": {

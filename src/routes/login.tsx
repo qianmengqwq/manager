@@ -177,7 +177,12 @@ export function LoginPage() {
           }
 
           toast.success('登录成功')
-          navigate({ to: '/dashboard' })
+          if (result.result.level === 1) {
+            navigate({ to: '/dashboard' })
+          }
+          else {
+            navigate({ to: '/dashboard/common' })
+          }
         }
         catch (error) {
           console.error('获取头像错误:', error)
@@ -193,7 +198,12 @@ export function LoginPage() {
 
           login(userData as UserZustand)
           toast.success('登录成功，但获取头像失败')
-          navigate({ to: '/dashboard' })
+          if (result.result.level === 1) {
+            navigate({ to: '/dashboard' })
+          }
+          else {
+            navigate({ to: '/dashboard/common' })
+          }
         }
       }
       else {

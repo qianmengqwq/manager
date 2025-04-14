@@ -3,6 +3,7 @@ import type { EventLog } from './logType'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Eye } from 'lucide-react'
@@ -15,6 +16,31 @@ interface UseColumnsProps {
 
 export function useColumns({ showLogDetail }: UseColumnsProps) {
   return useMemo<ColumnDef<EventLog>[]>(() => [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected()
+            || (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value: boolean | 'indeterminate') => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="全选"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+          aria-label="选择行"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 40,
+    },
     {
       id: 'eventtime',
       accessorKey: 'eventtime',

@@ -172,7 +172,7 @@ export default function CollegeManager() {
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="overflow-y-auto pr-2 pb-4 max-h-[800px]">
             <div className="grid gap-6">
-              {filteredColleges.map((college) => {
+              {filteredColleges?.map((college) => {
                 const majors = majorsByCollege[college.collegeid] || []
                 const isExpanded = expandedColleges.includes(college.collegeid)
 
