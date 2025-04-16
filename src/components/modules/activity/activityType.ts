@@ -15,28 +15,6 @@ export interface Activity {
   piclist: string[] | null
 }
 
-// API响应中result的实际结构
-export interface ActivityListResult {
-  total: number
-  pageTotal: number
-  rows: Activity[]
-}
-
-// 活动筛选条件类型
-export interface ActivityFilter {
-  activityid?: number
-  activityname?: string
-  speaker?: string
-  college?: string
-  savetime?: string
-  releasetime?: string
-  signtime?: string
-  holdtime?: string
-  totalnumber?: number
-  status?: number
-  del?: number
-}
-
 // 创建活动请求类型
 export interface CreateActivityRequest {
   activityid?: number

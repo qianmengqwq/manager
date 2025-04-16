@@ -99,12 +99,22 @@ function ActivityCarousel({ images, activityName }: { images: string[], activity
     stopOnInteraction: false,
   }
 
-  const [emblaRef] = useEmblaCarousel({ loop: true }, [AutoPlay(autoplayOptions)])
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [AutoPlay(autoplayOptions)])
 
-  // 阻止点击事件冒泡
-  const handleControlClick = (e: React.MouseEvent) => {
+  // 阻止点击事件冒泡并切换到上一张
+  const handlePrevClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
+    if (emblaApi)
+      emblaApi.scrollPrev()
+  }
+
+  // 阻止点击事件冒泡并切换到下一张
+  const handleNextClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (emblaApi)
+      emblaApi.scrollNext()
   }
 
   return (
@@ -134,7 +144,7 @@ function ActivityCarousel({ images, activityName }: { images: string[], activity
             variant="outline"
             size="icon"
             className="h-7 w-7 absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-70 hover:opacity-100 rounded-full bg-white/70"
-            onClick={handleControlClick}
+            onClick={handlePrevClick}
           >
             <span className="sr-only">Previous</span>
             <span aria-hidden>‹</span>
@@ -143,7 +153,7 @@ function ActivityCarousel({ images, activityName }: { images: string[], activity
             variant="outline"
             size="icon"
             className="h-7 w-7 absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-70 hover:opacity-100 rounded-full bg-white/70"
-            onClick={handleControlClick}
+            onClick={handleNextClick}
           >
             <span className="sr-only">Next</span>
             <span aria-hidden>›</span>

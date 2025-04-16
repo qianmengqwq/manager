@@ -67,8 +67,9 @@ function ActivityDetail() {
     act => act.activityid === Number(activityId),
   )
 
-  // 阻止轮播图控制按钮的点击事件冒泡
+  // 轮播图按钮无需阻止默认行为，只阻止冒泡即可
   const handleCarouselControlClick = (e: React.MouseEvent) => {
+    // 只阻止冒泡，不阻止默认行为
     e.stopPropagation()
   }
 
