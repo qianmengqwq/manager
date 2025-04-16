@@ -1,5 +1,5 @@
 {
-  "name": "manager",
+  "name": "user",
   "type": "module",
   "version": "0.0.0",
   "private": true,
@@ -39,6 +39,9 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.7.3",
     "github-markdown-css": "^5.8.1",
     "lucide-react": "^0.487.0",
     "nuqs": "^2.4.1",
