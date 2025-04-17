@@ -67,12 +67,6 @@ function ActivityDetail() {
     act => act.activityid === Number(activityId),
   )
 
-  // 轮播图按钮无需阻止默认行为，只阻止冒泡即可
-  const handleCarouselControlClick = (e: React.MouseEvent) => {
-    // 只阻止冒泡，不阻止默认行为
-    e.stopPropagation()
-  }
-
   // 预加载图片
   useEffect(() => {
     const loadImages = async () => {
@@ -295,8 +289,8 @@ function ActivityDetail() {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-4" onClick={handleCarouselControlClick} />
-                  <CarouselNext className="right-4" onClick={handleCarouselControlClick} />
+                  <CarouselPrevious className="left-4" />
+                  <CarouselNext className="right-4" />
                 </Carousel>
               </div>
             )}

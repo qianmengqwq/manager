@@ -118,7 +118,7 @@ function ActivityCarousel({ images, activityName }: { images: string[], activity
   }
 
   return (
-    <div className="w-full h-48 bg-muted/30 overflow-hidden relative">
+    <div className="w-full aspect-[16/9] bg-muted/30 overflow-hidden relative">
       <div className="h-full" ref={emblaRef}>
         <div className="flex h-full">
           {images.map((src, index) => (
@@ -128,7 +128,7 @@ function ActivityCarousel({ images, activityName }: { images: string[], activity
                   <img
                     src={src}
                     alt={`${activityName} 图片 ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <Skeleton className="w-full h-full" />
